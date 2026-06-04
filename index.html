@@ -2506,19 +2506,4 @@ print(pelanggan["kota"].value_counts())</pre>
     { q:'produk.groupby("kategori")["harga"].mean() menghitung?', opts:["Total harga semua","Rata-rata harga per kategori","Jumlah baris","Harga termahal global"], ans:1, exp:"Rata-rata harga untuk tiap kategori." },
     { q:"Untuk mengurutkan DataFrame pakai?", opts:["order_by()","sort_values()","arrange()","rank()"], ans:1, exp:"sort_values() mengurutkan." },
     { q:"ascending=False berarti?", opts:["Menaik","Menurun (besar ke kecil)","Acak","Tidak diurutkan"], ans:1, exp:"ascending=False = urutan menurun." },
-    { q:"value_counts() berguna untuk?", opts:["Menghitung frekuensi tiap nilai","Menjumlahkan kolom","Menghapus duplikat","Menggambar grafik"], ans:0, exp:"value_counts menghitung kemunculan tiap nilai." },
-  ],
-  challenge:{
-    title:"Kategori Termahal",
-    desc:"Cari tahu <strong>kategori dengan rata-rata harga tertinggi</strong>. Gunakan groupby pada kolom kategori dan harga, lalu cetak nama kategorinya. Output: <code>Sembako</code>",
-    expected:"Sembako",
-    expectedDisplay:"Sembako",
-    starter:'rata = produk.groupby("kategori")["harga"].mean()\nprint(rata.idxmax())',
-    hints:["groupby('kategori')['harga'].mean() memberi rata per kategori.","idxmax() memberi index (kategori) dengan nilai terbesar.","print(produk.groupby('kategori')['harga'].mean().idxmax()) → Sembako"],
-  }
-};
-
-console.log('✓ Konten 12 chapter berhasil dimuat:', Object.keys(CHAPTER_CONTENT).length, 'chapter');
-</script>
-</body>
-</html>
+    { q:"value_counts() berguna untuk?"
