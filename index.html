@@ -1228,6 +1228,7 @@ function renderChapter(c, track, id) {
     <button class="btn btn-ghost btn-sm" onclick="route('${track}')" style="margin-bottom:12px;"><i data-lucide="arrow-left"></i> Kembali</button>
     <div class="tabs">
       <div class="tab active" data-ctab="materi">📖 Materi</div>
+      ${track === 'sql' ? '<div class="tab" data-ctab="data">🗂️ Lihat Data</div>' : ''}
       <div class="tab" data-ctab="sandbox">💻 Sandbox</div>
       <div class="tab" data-ctab="quiz">❓ Kuis</div>
       <div class="tab ${challengeUnlocked ? '' : 'disabled'}" data-ctab="challenge" title="${challengeUnlocked ? '' : 'Selesaikan kuis dengan skor min. 60 untuk membuka'}">🏆 Tantangan</div>
@@ -1262,6 +1263,9 @@ function renderChapterTab() {
       <div style="margin-top:24px;">
         <button class="btn btn-primary" onclick="completeMateri()"><i data-lucide="check"></i> Tandai Sudah Baca (+10 XP)</button>
       </div>`;
+  }
+  else if (chapterTab === 'data') {
+    renderDataTab(wrap);
   }
   else if (chapterTab === 'sandbox') {
     wrap.innerHTML = `
@@ -1299,6 +1303,79 @@ function renderChapterTab() {
   }
 
   setTimeout(() => lucide.createIcons(), 30);
+}
+
+/* ---------- TAB LIHAT DATA (khusus SQL) ---------- */
+const TABLE_INFO = {
+  produk: {
+    desc: "Daftar barang yang dijual toko.",
+    cols: [
+      ["id","INTEGER","Nomor unik produk (kunci utama)"],
+      ["nama_produk","TEXT","Nama barang"],
+      ["kategori","TEXT","Kelompok: Sembako, Perawatan, Minuman, Makanan"],
+      ["harga","INTEGER","Harga jual (Rupiah)"],
+      ["stok","INTEGER","Jumlah stok tersedia"],
+    ]
+  },
+  pelanggan: {
+    desc: "Data pelanggan yang terdaftar.",
+    cols: [
+      ["id","INTEGER","Nomor unik pelanggan (kunci utama)"],
+      ["nama","TEXT","Nama pelanggan"],
+      ["kota","TEXT","Kota domisili"],
+      ["tanggal_daftar","TEXT","Tanggal mulai mendaftar"],
+    ]
+  },
+  transaksi: {
+    desc: "Catatan pembelian. Menghubungkan pelanggan dengan produk.",
+    cols: [
+      ["id","INTEGER","Nomor unik transaksi (kunci utama)"],
+      ["id_pelanggan","INTEGER","Mengacu ke produk.id → siapa pembelinya"],
+      ["id_produk","INTEGER","Mengacu ke produk.id → barang apa"],
+      ["jumlah","INTEGER","Banyaknya barang dibeli"],
+      ["tanggal","TEXT","Tanggal transaksi"],
+    ]
+  }
+};
+async function renderDataTab(wrap) {
+  wrap.innerHTML = `
+    <div class="callout" style="margin-bottom:18px;">
+      <div class="callout-title">🗂️ Kenali Tabelnya Dulu</div>
+      Sebelum menulis query, lihat dulu bentuk ketiga tabel di database toko ini. Perhatikan nama kolom dan contoh isinya — kamu akan memakainya di Sandbox & Tantangan.
+    </div>
+    <div id="dataTablesArea"><div class="center" style="padding:40px;"><div class="spinner"></div> &nbsp;Memuat data tabel...</div></div>
+  `;
+  const area = document.getElementById('dataTablesArea');
+  let html = '';
+  for (const tbl of ['produk','pelanggan','transaksi']) {
+    const info = TABLE_INFO[tbl];
+    const r = await runSQL(`SELECT * FROM ${tbl}`);
+    const totalRows = r.ok ? r.rows.length : 0;
+    const previewRows = r.ok ? r.rows.slice(0, 6) : [];
+    html += `
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+          <div>
+            <h3 style="margin:0; color:var(--primary);">📋 ${tbl}</h3>
+            <div style="font-size:13px; color:var(--muted);">${info.desc}</div>
+          </div>
+          <span class="pill pill-muted">${totalRows} baris • ${info.cols.length} kolom</span>
+        </div>
+
+        <div style="font-size:12px; text-transform:uppercase; color:var(--muted); margin:16px 0 8px; letter-spacing:.5px;">Struktur Kolom</div>
+        <table class="output-table" style="margin-bottom:18px;">
+          <thead><tr><th>Kolom</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+          <tbody>
+            ${info.cols.map(c=>`<tr><td class="mono" style="color:var(--primary);">${c[0]}</td><td class="mono" style="color:var(--muted);">${c[1]}</td><td>${c[2]}</td></tr>`).join('')}
+          </tbody>
+        </table>
+
+        <div style="font-size:12px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; letter-spacing:.5px;">Contoh Isi Data (${Math.min(6,totalRows)} dari ${totalRows} baris)</div>
+        ${r.ok ? renderSQLTable(r.cols, previewRows) : `<div class="output-panel error">${r.error}</div>`}
+      </div>
+    `;
+  }
+  area.innerHTML = html;
 }
 
 async function runSandbox() {
