@@ -1,0 +1,2524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LearnData ID — Belajar SQL & Python Interaktif</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Icons -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- CodeMirror 5 (lebih ringan untuk single file daripada CM6 bundling) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+
+<!-- Firebase compat -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+/* ====================== DESIGN TOKENS ====================== */
+:root {
+  --bg: #0f0f11;
+  --surface: #1a1a1f;
+  --surface-2: #22222a;
+  --border: #2c2c36;
+  --primary: #6c63ff;
+  --primary-hover: #7d76ff;
+  --primary-soft: rgba(108,99,255,0.15);
+  --success: #4caf82;
+  --warning: #f5a623;
+  --error: #e05c5c;
+  --text: #e8e8ed;
+  --muted: #888894;
+  --shadow: 0 8px 24px rgba(0,0,0,0.35);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+[data-theme="light"] {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #f0f0f3;
+  --border: #e2e2e8;
+  --text: #1a1a1f;
+  --muted: #6b6b75;
+  --shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Geist', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+code, pre, .mono { font-family: 'Geist Mono', monospace; }
+button { font-family: inherit; cursor: pointer; border: none; }
+input, select, textarea { font-family: inherit; }
+a { color: var(--primary); text-decoration: none; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ====================== UTILITIES ====================== */
+.hidden { display: none !important; }
+.flex { display: flex; }
+.center { display: flex; align-items: center; justify-content: center; }
+.gap-1 { gap: 8px; } .gap-2 { gap: 16px; } .gap-3 { gap: 24px; }
+.col { flex-direction: column; }
+.grow { flex: 1; }
+
+/* ====================== BUTTONS ====================== */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: var(--radius-sm);
+  font-weight: 500; font-size: 14px;
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--border);
+  transition: all 0.15s ease;
+}
+.btn:hover { background: var(--border); }
+.btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-success { background: var(--success); color: white; border-color: var(--success); }
+.btn-danger { background: var(--error); color: white; border-color: var(--error); }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--surface-2); }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ====================== INPUTS ====================== */
+.input {
+  width: 100%; padding: 12px 14px;
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 14px; transition: border 0.15s;
+}
+.input:focus { outline: none; border-color: var(--primary); }
+.label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--muted); font-weight: 500; }
+
+/* ====================== CARDS ====================== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+/* ====================== BADGES & PILLS ====================== */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 999px;
+  background: var(--primary-soft); color: var(--primary);
+  font-size: 12px; font-weight: 500;
+}
+.pill-success { background: rgba(76,175,130,0.15); color: var(--success); }
+.pill-warning { background: rgba(245,166,35,0.15); color: var(--warning); }
+.pill-muted { background: var(--surface-2); color: var(--muted); }
+
+/* ====================== AUTH SCREEN ====================== */
+#authScreen {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(108,99,255,0.15), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(76,175,130,0.1), transparent 40%),
+    var(--bg);
+}
+.auth-card {
+  width: 100%; max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px;
+  box-shadow: var(--shadow);
+}
+.auth-logo {
+  font-size: 26px; font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+}
+.auth-sub { color: var(--muted); margin-bottom: 28px; font-size: 14px; }
+.auth-tabs { display: flex; background: var(--surface-2); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 20px; }
+.auth-tab {
+  flex: 1; padding: 8px; border-radius: 6px;
+  text-align: center; font-size: 14px; font-weight: 500;
+  background: transparent; color: var(--muted);
+}
+.auth-tab.active { background: var(--surface); color: var(--text); }
+.auth-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 18px 0; color: var(--muted); font-size: 12px;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* ====================== APP SHELL ====================== */
+#appScreen { display: none; min-height: 100vh; }
+.layout { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 260px; background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px; display: flex; flex-direction: column; gap: 8px;
+  position: sticky; top: 0; height: 100vh;
+}
+.sidebar-logo {
+  font-weight: 700; font-size: 18px; margin-bottom: 20px;
+  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  color: var(--muted); font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--text); }
+.nav-item.active { background: var(--primary-soft); color: var(--primary); }
+.nav-section { font-size: 11px; text-transform: uppercase; color: var(--muted); padding: 12px 14px 6px; letter-spacing: 0.5px; }
+
+.main { flex: 1; padding: 28px 36px; max-width: 1200px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+.page-title { font-size: 24px; font-weight: 600; }
+.page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--primary); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 14px;
+}
+.user-menu { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 10px; border-radius: var(--radius-sm); }
+.user-menu:hover { background: var(--surface-2); }
+
+/* ====================== DASHBOARD ====================== */
+.grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.stat-card { padding: 18px; }
+.stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 28px; font-weight: 600; margin-top: 6px; }
+.stat-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+
+.progress-ring-wrap { display: flex; align-items: center; gap: 24px; }
+.activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.activity-item:last-child { border-bottom: none; }
+.activity-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.activity-text { flex: 1; font-size: 14px; }
+.activity-time { font-size: 12px; color: var(--muted); }
+
+/* ====================== COURSE LIST ====================== */
+.track-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.chapter-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.chapter-card {
+  padding: 18px; cursor: pointer;
+  transition: all 0.2s; position: relative;
+}
+.chapter-card:hover:not(.locked) { border-color: var(--primary); transform: translateY(-2px); }
+.chapter-card.locked { opacity: 0.5; cursor: not-allowed; }
+.chapter-num { font-size: 12px; color: var(--muted); }
+.chapter-title { font-weight: 600; margin: 6px 0 8px; }
+.chapter-desc { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+.chapter-meta { display: flex; gap: 8px; align-items: center; }
+
+/* ====================== CHAPTER VIEW ====================== */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; position: relative; }
+.tab {
+  padding: 12px 18px; cursor: pointer;
+  color: var(--muted); font-size: 14px; font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab.disabled { opacity: 0.4; cursor: not-allowed; }
+
+.materi-content { max-width: 760px; line-height: 1.8; }
+.materi-content h2 { font-size: 22px; margin: 24px 0 12px; }
+.materi-content h3 { font-size: 17px; margin: 20px 0 8px; color: var(--primary); }
+.materi-content p { margin-bottom: 12px; }
+.materi-content ul, .materi-content ol { margin-left: 24px; margin-bottom: 12px; }
+.materi-content li { margin-bottom: 4px; }
+.materi-content code:not(pre code) {
+  background: var(--surface-2); padding: 2px 6px; border-radius: 4px;
+  font-size: 13px; color: var(--primary);
+}
+.materi-content pre {
+  background: var(--surface-2); padding: 16px; border-radius: var(--radius-sm);
+  overflow-x: auto; margin: 12px 0; font-size: 13px;
+  border: 1px solid var(--border);
+}
+.callout {
+  background: var(--primary-soft); border-left: 3px solid var(--primary);
+  padding: 14px 18px; border-radius: var(--radius-sm); margin: 16px 0;
+}
+.callout-title { font-weight: 600; margin-bottom: 6px; color: var(--primary); }
+.analogi {
+  background: rgba(245,166,35,0.1); border-left: 3px solid var(--warning);
+  padding: 14px 18px; border-radius: var(--radius-sm); margin: 16px 0;
+}
+.poin-penting {
+  background: rgba(76,175,130,0.1); border: 1px solid var(--success);
+  padding: 18px; border-radius: var(--radius); margin-top: 24px;
+}
+
+/* ====================== SANDBOX ====================== */
+.sandbox { display: grid; grid-template-rows: auto 1fr auto; gap: 12px; height: calc(100vh - 240px); min-height: 500px; }
+.editor-toolbar { display: flex; gap: 8px; align-items: center; }
+.editor-wrap { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.CodeMirror { height: 100% !important; font-family: 'Geist Mono', monospace; font-size: 14px; }
+.output-panel {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px;
+  overflow: auto; max-height: 300px;
+  font-family: 'Geist Mono', monospace; font-size: 13px;
+  white-space: pre-wrap;
+}
+.output-panel.error { border-color: var(--error); color: var(--error); }
+.output-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.output-table th, .output-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.output-table th { background: var(--surface); font-weight: 600; }
+
+/* ====================== KUIS ====================== */
+.quiz-question { margin-bottom: 24px; }
+.quiz-q-text { font-weight: 500; margin-bottom: 12px; }
+.quiz-option {
+  display: block; padding: 12px 16px; margin-bottom: 8px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;
+}
+.quiz-option:hover { border-color: var(--primary); }
+.quiz-option.selected { background: var(--primary-soft); border-color: var(--primary); }
+.quiz-option.correct { background: rgba(76,175,130,0.15); border-color: var(--success); }
+.quiz-option.wrong { background: rgba(224,92,92,0.15); border-color: var(--error); }
+.quiz-feedback { margin-top: 8px; padding: 10px; border-radius: var(--radius-sm); font-size: 13px; }
+.quiz-feedback.correct { background: rgba(76,175,130,0.1); color: var(--success); }
+.quiz-feedback.wrong { background: rgba(224,92,92,0.1); color: var(--error); }
+
+/* ====================== TANTANGAN ====================== */
+.challenge-desc { background: var(--surface); padding: 18px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 16px; }
+.expected-box { background: var(--surface-2); padding: 12px; border-radius: var(--radius-sm); margin-top: 12px; }
+.hints-row { display: flex; gap: 8px; margin-top: 12px; }
+.hint-btn {
+  padding: 8px 14px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 13px; color: var(--text);
+}
+.hint-revealed { background: rgba(245,166,35,0.1); border-color: var(--warning); padding: 12px; border-radius: var(--radius-sm); margin-top: 8px; font-size: 13px; }
+
+/* ====================== TOAST ====================== */
+.toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 14px 18px; border-radius: var(--radius);
+  box-shadow: var(--shadow); min-width: 280px;
+  display: flex; gap: 12px; align-items: center;
+  animation: slideIn 0.3s ease;
+}
+.toast.success { border-left: 3px solid var(--success); }
+.toast.error { border-left: 3px solid var(--error); }
+.toast.xp { border-left: 3px solid var(--primary); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ====================== MODAL ====================== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; backdrop-filter: blur(4px);
+}
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px;
+  max-width: 460px; width: 90%;
+}
+.modal-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.modal-text { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ====================== BADGES GRID ====================== */
+.badges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.badge-item {
+  text-align: center; padding: 16px;
+  background: var(--surface-2); border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.badge-item.earned { border-color: var(--primary); background: var(--primary-soft); }
+.badge-emoji { font-size: 32px; margin-bottom: 6px; opacity: 0.4; }
+.badge-item.earned .badge-emoji { opacity: 1; }
+.badge-name { font-size: 13px; font-weight: 500; }
+
+/* ====================== LOADING ====================== */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border); border-top-color: var(--primary);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.full-loader { position: fixed; inset: 0; background: rgba(15,15,17,0.9); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 9999; }
+
+/* ====================== LEVEL BAR ====================== */
+.level-bar-wrap { background: var(--surface-2); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+.level-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #a78bfa); transition: width 0.5s; }
+
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { padding: 16px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<!-- ===================== AUTH SCREEN ===================== -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">LearnData ID</div>
+    <div class="auth-sub">Belajar SQL & Python untuk pemula, dalam Bahasa Indonesia.</div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-authtab="login">Masuk</div>
+      <div class="auth-tab" data-authtab="register">Daftar</div>
+    </div>
+
+    <!-- Login Form -->
+    <form id="loginForm">
+      <label class="label">Email</label>
+      <input class="input" type="email" id="loginEmail" required style="margin-bottom:14px" placeholder="kamu@email.com"/>
+      <label class="label">Password</label>
+      <input class="input" type="password" id="loginPass" required style="margin-bottom:18px" placeholder="••••••••"/>
+      <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+        <span id="loginBtnText">Masuk</span>
+      </button>
+      <div class="auth-divider">atau</div>
+      <button type="button" class="btn" style="width:100%; justify-content:center;" onclick="loginWithGoogle()">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Masuk dengan Google
+      </button>
+      <p style="text-align:center; color: var(--muted); margin-top: 16px; font-size: 13px;" id="loginError"></p>
+    </form>
+
+    <!-- Register Form -->
+    <form id="registerForm" class="hidden">
+      <label class="label">Nama Lengkap</label>
+      <input class="input" type="text" id="regName" required style="margin-bottom:14px" placeholder="Nama kamu"/>
+      <label class="label">Email</label>
+      <input class="input" type="email" id="regEmail" required style="margin-bottom:14px" placeholder="kamu@email.com"/>
+      <label class="label">Password (min. 6 karakter)</label>
+      <input class="input" type="password" id="regPass" required minlength="6" style="margin-bottom:18px" placeholder="••••••••"/>
+      <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+        <span id="regBtnText">Daftar</span>
+      </button>
+      <div class="auth-divider">atau</div>
+      <button type="button" class="btn" style="width:100%; justify-content:center;" onclick="loginWithGoogle()">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Daftar dengan Google
+      </button>
+      <p style="text-align:center; color: var(--muted); margin-top: 16px; font-size: 13px;" id="regError"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== APP SCREEN ===================== -->
+<div id="appScreen">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">⚡ LearnData ID</div>
+      <div class="nav-item active" data-route="dashboard"><i data-lucide="home"></i> Dashboard</div>
+      <div class="nav-section">Pembelajaran</div>
+      <div class="nav-item" data-route="sql"><i data-lucide="database"></i> Track SQL</div>
+      <div class="nav-item" data-route="python"><i data-lucide="code-2"></i> Track Python</div>
+      <div class="nav-section">Akun</div>
+      <div class="nav-item" data-route="profile"><i data-lucide="user"></i> Profil</div>
+      <div class="nav-item" data-route="settings"><i data-lucide="settings"></i> Pengaturan</div>
+      <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border);">
+        <div class="nav-item" onclick="confirmLogout()"><i data-lucide="log-out"></i> Keluar</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <div class="page-title" id="pageTitle">Dashboard</div>
+          <div class="page-sub" id="pageSub">Selamat datang!</div>
+        </div>
+        <div class="user-menu" onclick="route('profile')">
+          <div class="avatar" id="userAvatar">U</div>
+          <div>
+            <div style="font-size:14px; font-weight:500;" id="userNameTop">User</div>
+            <div style="font-size:12px; color:var(--muted);" id="userLevelTop">Level 1 — Pemula</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="pageContent"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ===================== TOASTS / MODALS ===================== -->
+<div class="toast-container" id="toastContainer"></div>
+<div id="modalRoot"></div>
+
+<script>
+/* ================================================================
+   FIREBASE CONFIG — GANTI DENGAN CREDENTIALS KAMU
+   ================================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBj5_3aQflw0ylCwHJ92_AGkofqpvu47e4",
+  authDomain: "belajar-python-sql.firebaseapp.com",
+  projectId: "belajar-python-sql",
+  storageBucket: "belajar-python-sql.firebasestorage.app",
+  messagingSenderId: "242738496444",
+  appId: "1:242738496444:web:c6343a5d9555b5ac5de1b9"
+};
+/* ============================================================== */
+
+let useFirebase = false;
+let auth = null, db = null;
+try {
+  if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    useFirebase = true;
+  }
+} catch(e) { console.warn("Firebase init gagal, fallback ke mode lokal:", e); }
+
+/* ================================================================
+   STATE LOKAL (in-memory) — Firestore akan sync ketika tersedia
+   ================================================================ */
+const STATE = {
+  user: null,
+  profile: { nama: "User", email: "", photoURL: "", darkMode: true, fontSize: 14 },
+  stats: { totalXP: 0, level: 1, streak: 0, lastLogin: null },
+  badges: [],
+  progress: {}, // key: "sql_1", value: {materiDone, quizScore, ...}
+  activity: [],
+  weeklyXP: [0,0,0,0,0,0,0], // Sen-Min
+  drafts: {}, // kode editor sementara: key "sql_1_sandbox" / "sql_1_challenge"
+};
+
+const LEVELS = [
+  { name: "Pemula", min: 0 },
+  { name: "Pelajar", min: 100 },
+  { name: "Praktisi", min: 300 },
+  { name: "Analis", min: 600 },
+  { name: "Master", min: 1000 }
+];
+function getLevel(xp) {
+  let lv = 1;
+  for (let i=0; i<LEVELS.length; i++) if (xp >= LEVELS[i].min) lv = i+1;
+  return { num: lv, name: LEVELS[lv-1].name, min: LEVELS[lv-1].min, next: LEVELS[lv]?.min ?? null };
+}
+
+const ALL_BADGES = [
+  { id: "first_query", emoji: "🥉", name: "Query Pertama", desc: "Selesaikan SQL Chapter 1" },
+  { id: "snake_starter", emoji: "🐍", name: "Ular Pemula", desc: "Selesaikan Python Chapter 1" },
+  { id: "streak_3", emoji: "🔥", name: "3 Hari Beruntun", desc: "Streak 3 hari" },
+  { id: "sql_master", emoji: "📊", name: "Kuasai SQL", desc: "Selesaikan semua chapter SQL" },
+  { id: "pythonista", emoji: "🤖", name: "Pythonista", desc: "Selesaikan semua chapter Python" },
+  { id: "data_ruler", emoji: "🏅", name: "Penguasa Data", desc: "Selesaikan SEMUA chapter" }
+];
+
+const QUOTES = [
+  "Setiap baris kode adalah langkah kecil menuju keahlian besar.",
+  "Yang penting bukan seberapa cepat kamu belajar, tapi konsistensimu.",
+  "Data adalah cerita yang menunggu untuk diceritakan.",
+  "Bug hari ini adalah pelajaran untuk besok.",
+  "Belajar coding seperti belajar bahasa: makin sering dipakai, makin lancar.",
+  "Tidak ada programmer pemula yang tidak bingung. Itu bagian dari proses.",
+  "Pikirkan dulu, baru ketik. Kode yang baik dimulai dari ide yang jelas."
+];
+
+/* ================================================================
+   SAMPLE DATA — toko sederhana
+   ================================================================ */
+const SAMPLE_SQL_INIT = `
+CREATE TABLE produk (id INTEGER PRIMARY KEY, nama_produk TEXT, kategori TEXT, harga INTEGER, stok INTEGER);
+CREATE TABLE pelanggan (id INTEGER PRIMARY KEY, nama TEXT, kota TEXT, tanggal_daftar TEXT);
+CREATE TABLE transaksi (id INTEGER PRIMARY KEY, id_pelanggan INTEGER, id_produk INTEGER, jumlah INTEGER, tanggal TEXT);
+
+INSERT INTO produk VALUES
+(1,'Beras 5kg','Sembako',65000,50),(2,'Minyak Goreng 2L','Sembako',32000,80),
+(3,'Gula Pasir 1kg','Sembako',14000,100),(4,'Mie Instan','Sembako',3500,500),
+(5,'Sabun Mandi','Perawatan',8500,120),(6,'Shampo 170ml','Perawatan',18000,60),
+(7,'Pasta Gigi','Perawatan',12500,90),(8,'Susu Kotak 1L','Minuman',18000,40),
+(9,'Kopi Sachet','Minuman',2000,300),(10,'Teh Celup','Minuman',9500,75),
+(11,'Roti Tawar','Makanan',16000,25),(12,'Selai Coklat','Makanan',24000,30),
+(13,'Biskuit','Makanan',11000,60),(14,'Air Mineral 600ml','Minuman',3000,200),
+(15,'Detergen 1kg','Perawatan',22000,55),(16,'Tisu','Perawatan',15000,70),
+(17,'Telur 1kg','Sembako',28000,40),(18,'Margarin','Sembako',9000,45),
+(19,'Sirup','Minuman',26000,20),(20,'Coklat Batang','Makanan',13500,35);
+
+INSERT INTO pelanggan VALUES
+(1,'Andi Pratama','Jakarta','2024-01-15'),(2,'Budi Santoso','Bandung','2024-02-03'),
+(3,'Citra Dewi','Surabaya','2024-02-20'),(4,'Dewi Lestari','Jakarta','2024-03-05'),
+(5,'Eko Wijaya','Yogyakarta','2024-03-18'),(6,'Fitri Handayani','Bandung','2024-04-02'),
+(7,'Gunawan','Medan','2024-04-15'),(8,'Hani Putri','Jakarta','2024-05-01'),
+(9,'Indra Kusuma','Surabaya','2024-05-12'),(10,'Joko Susilo','Semarang','2024-06-08'),
+(11,'Kartika Sari','Jakarta','2024-07-01'),(12,'Lukman Hakim','Bandung','2024-07-22'),
+(13,'Maya Anggraini','Yogyakarta','2024-08-10'),(14,'Nanda Pratama','Medan','2024-09-05'),
+(15,'Olivia Putri','Jakarta','2024-10-12');
+
+INSERT INTO transaksi VALUES
+(1,1,1,2,'2025-01-05'),(2,1,4,10,'2025-01-05'),(3,2,2,1,'2025-01-08'),
+(4,3,5,3,'2025-01-10'),(5,2,9,20,'2025-01-12'),(6,4,1,1,'2025-01-15'),
+(7,5,3,2,'2025-01-18'),(8,1,11,1,'2025-01-20'),(9,6,7,2,'2025-01-22'),
+(10,7,8,3,'2025-01-25'),(11,3,4,5,'2025-02-01'),(12,8,12,1,'2025-02-03'),
+(13,9,6,1,'2025-02-05'),(14,4,14,6,'2025-02-08'),(15,10,1,1,'2025-02-10'),
+(16,2,15,1,'2025-02-12'),(17,5,13,2,'2025-02-14'),(18,11,2,2,'2025-02-15'),
+(19,12,9,15,'2025-02-18'),(20,6,16,3,'2025-02-20'),(21,7,17,2,'2025-02-22'),
+(22,1,18,1,'2025-02-25'),(23,13,5,4,'2025-03-01'),(24,3,19,1,'2025-03-03'),
+(25,14,20,2,'2025-03-05'),(26,8,3,3,'2025-03-08'),(27,9,11,1,'2025-03-10'),
+(28,15,1,1,'2025-03-12'),(29,10,7,2,'2025-03-15'),(30,11,4,8,'2025-03-18'),
+(31,4,8,1,'2025-03-20'),(32,12,14,4,'2025-03-22'),(33,2,5,2,'2025-03-25'),
+(34,5,9,10,'2025-03-28'),(35,6,12,1,'2025-04-01'),(36,7,2,1,'2025-04-03'),
+(37,1,6,1,'2025-04-05'),(38,8,1,1,'2025-04-08'),(39,3,15,1,'2025-04-10'),
+(40,9,4,12,'2025-04-12'),(41,13,17,1,'2025-04-15'),(42,4,9,5,'2025-04-18'),
+(43,11,3,2,'2025-04-20'),(44,14,11,1,'2025-04-22'),(45,2,8,2,'2025-04-25'),
+(46,15,6,1,'2025-04-28'),(47,5,1,1,'2025-05-01'),(48,10,2,1,'2025-05-03'),
+(49,12,4,7,'2025-05-05'),(50,6,5,2,'2025-05-08');
+`;
+
+const PYTHON_DATA_SETUP = `
+import pandas as pd
+
+# Data toko sederhana
+produk = pd.DataFrame([
+    {'id':1,'nama_produk':'Beras 5kg','kategori':'Sembako','harga':65000,'stok':50},
+    {'id':2,'nama_produk':'Minyak Goreng 2L','kategori':'Sembako','harga':32000,'stok':80},
+    {'id':3,'nama_produk':'Gula Pasir 1kg','kategori':'Sembako','harga':14000,'stok':100},
+    {'id':4,'nama_produk':'Mie Instan','kategori':'Sembako','harga':3500,'stok':500},
+    {'id':5,'nama_produk':'Sabun Mandi','kategori':'Perawatan','harga':8500,'stok':120},
+    {'id':6,'nama_produk':'Shampo 170ml','kategori':'Perawatan','harga':18000,'stok':60},
+    {'id':7,'nama_produk':'Pasta Gigi','kategori':'Perawatan','harga':12500,'stok':90},
+    {'id':8,'nama_produk':'Susu Kotak 1L','kategori':'Minuman','harga':18000,'stok':40},
+    {'id':9,'nama_produk':'Kopi Sachet','kategori':'Minuman','harga':2000,'stok':300},
+    {'id':10,'nama_produk':'Teh Celup','kategori':'Minuman','harga':9500,'stok':75},
+])
+
+pelanggan = pd.DataFrame([
+    {'id':1,'nama':'Andi','kota':'Jakarta'},
+    {'id':2,'nama':'Budi','kota':'Bandung'},
+    {'id':3,'nama':'Citra','kota':'Surabaya'},
+    {'id':4,'nama':'Dewi','kota':'Jakarta'},
+    {'id':5,'nama':'Eko','kota':'Yogyakarta'},
+])
+`;
+
+/* ================================================================
+   COURSES — kerangka. Konten lengkap di Bagian 2.
+   ================================================================ */
+const COURSES = {
+  sql: [
+    { id:1, title:"Mengenal Database & SELECT", desc:"Struktur tabel, SELECT *, SELECT kolom tertentu", readMin:8 },
+    { id:2, title:"Memfilter Data", desc:"WHERE, AND, OR, NOT, BETWEEN, IN, LIKE", readMin:10 },
+    { id:3, title:"Mengurutkan & Membatasi", desc:"ORDER BY, LIMIT, OFFSET", readMin:7 },
+    { id:4, title:"Agregasi Data", desc:"COUNT, SUM, AVG, MIN, MAX, GROUP BY, HAVING", readMin:12 },
+    { id:5, title:"Menggabungkan Tabel", desc:"INNER JOIN, LEFT JOIN, RIGHT JOIN", readMin:14 },
+    { id:6, title:"Subquery & CTE", desc:"Subquery, WITH AS, query bersarang", readMin:12 },
+  ],
+  python: [
+    { id:1, title:"Dasar Python", desc:"Variabel, tipe data, print, input", readMin:8 },
+    { id:2, title:"Struktur Data", desc:"List, dictionary, tuple, indexing", readMin:10 },
+    { id:3, title:"Kontrol Alur", desc:"if/elif/else, for, while", readMin:10 },
+    { id:4, title:"Fungsi & Modul", desc:"def, parameter, return, import", readMin:10 },
+    { id:5, title:"Pandas Dasar", desc:"DataFrame, read_csv, head, describe, filter", readMin:14 },
+    { id:6, title:"Analisis Data", desc:"groupby, merge, pivot_table, visualisasi", readMin:14 },
+  ]
+};
+
+/* CHAPTER CONTENT akan diisi di Bagian 2 — placeholder dulu */
+const CHAPTER_CONTENT = {}; // CHAPTER_CONTENT["sql_1"] = { materi, sandboxStarter, quiz, challenge }
+
+/* ================================================================
+   ENGINE: sql.js (lazy)
+   ================================================================ */
+let SQLEngine = null, sqlDB = null, sqlLoading = null;
+async function loadSQL() {
+  if (SQLEngine) return SQLEngine;
+  if (sqlLoading) return sqlLoading;
+  sqlLoading = (async () => {
+    const initSqlJs = (await import('https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js')).default ||
+                      window.initSqlJs;
+    const SQL = await initSqlJs({ locateFile: f => `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${f}` });
+    SQLEngine = SQL;
+    sqlDB = new SQL.Database();
+    sqlDB.run(SAMPLE_SQL_INIT);
+    return SQL;
+  })();
+  return sqlLoading;
+}
+// Fallback: pakai script tag
+function loadSQLViaScript() {
+  return new Promise((resolve, reject) => {
+    if (window.initSqlJs) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js';
+    s.onload = () => resolve();
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+async function runSQL(query) {
+  await loadSQLViaScript();
+  if (!SQLEngine) {
+    SQLEngine = await window.initSqlJs({ locateFile: f => `https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/${f}` });
+    sqlDB = new SQLEngine.Database();
+    sqlDB.run(SAMPLE_SQL_INIT);
+  }
+  try {
+    const res = sqlDB.exec(query);
+    if (!res.length) return { ok:true, rows:[], cols:[], message:"Query berhasil dijalankan. Tidak ada baris yang dikembalikan." };
+    return { ok:true, cols: res[0].columns, rows: res[0].values };
+  } catch(e) {
+    return { ok:false, error: translateSQLError(e.message) };
+  }
+}
+function translateSQLError(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('no such table')) return "❌ Tabel tidak ditemukan. Periksa nama tabel kamu (contoh: produk, pelanggan, transaksi).";
+  if (m.includes('no such column')) return "❌ Nama kolom tidak dikenali. Periksa ejaan kolom yang kamu pakai.";
+  if (m.includes('syntax error')) return "❌ Ada kesalahan penulisan (syntax error). Cek tanda kurung, koma, atau kata kunci SQL.";
+  if (m.includes('ambiguous')) return "❌ Nama kolom ambigu. Jika ada kolom sama di 2 tabel, sebutkan nama tabelnya (contoh: produk.id).";
+  return "❌ Error: " + msg;
+}
+
+/* ================================================================
+   ENGINE: Pyodide (lazy)
+   ================================================================ */
+let pyodide = null, pyLoading = null;
+async function loadPyodideLazy() {
+  if (pyodide) return pyodide;
+  if (pyLoading) return pyLoading;
+  pyLoading = (async () => {
+    if (!window.loadPyodide) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+    pyodide = await window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/' });
+    await pyodide.loadPackage(['pandas']);
+    await pyodide.runPythonAsync(PYTHON_DATA_SETUP);
+    return pyodide;
+  })();
+  return pyLoading;
+}
+async function runPython(code) {
+  try {
+    await loadPyodideLazy();
+    // capture stdout
+    pyodide.runPython(`
+import sys, io
+_stdout = io.StringIO()
+sys.stdout = _stdout
+`);
+    let result;
+    try {
+      result = await pyodide.runPythonAsync(code);
+    } catch(e) {
+      pyodide.runPython('sys.stdout = sys.__stdout__');
+      return { ok:false, error: translatePyError(e.message) };
+    }
+    const out = pyodide.runPython('sys.stdout.getvalue()');
+    pyodide.runPython('sys.stdout = sys.__stdout__');
+    let text = out || '';
+    if (result !== undefined && result !== null) {
+      try { text += (text ? '\n' : '') + result.toString(); } catch(_){}
+    }
+    return { ok:true, output: text || '✓ Kode berhasil dijalankan (tidak ada output).' };
+  } catch(e) {
+    return { ok:false, error: translatePyError(e.message) };
+  }
+}
+function translatePyError(msg) {
+  if (msg.includes('NameError')) return "❌ Variabel atau nama tidak dikenali. Pastikan kamu sudah membuatnya sebelum dipakai.\n\n" + msg;
+  if (msg.includes('SyntaxError')) return "❌ Ada kesalahan penulisan. Cek tanda kurung, titik dua (:), atau indentasi.\n\n" + msg;
+  if (msg.includes('IndentationError')) return "❌ Indentasi (jarak spasi di awal baris) tidak konsisten. Python sensitif terhadap indentasi.\n\n" + msg;
+  if (msg.includes('TypeError')) return "❌ Tipe data tidak cocok untuk operasi ini.\n\n" + msg;
+  if (msg.includes('KeyError')) return "❌ Key tidak ditemukan di dictionary/DataFrame.\n\n" + msg;
+  if (msg.includes('IndexError')) return "❌ Index di luar jangkauan list.\n\n" + msg;
+  return "❌ " + msg;
+}
+
+/* ================================================================
+   FIREBASE HELPERS
+   ================================================================ */
+async function saveUserData() {
+  if (!useFirebase || !STATE.user) return;
+  try {
+    const ref = db.collection('users').doc(STATE.user.uid);
+    await ref.set({
+      profile: STATE.profile,
+      stats: STATE.stats,
+      badges: STATE.badges,
+      progress: STATE.progress,
+      activity: STATE.activity.slice(0, 50),
+      weeklyXP: STATE.weeklyXP,
+    }, { merge: true });
+  } catch(e) { console.error("Save error", e); }
+}
+async function loadUserData(uid) {
+  if (!useFirebase) return;
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    if (doc.exists) {
+      const d = doc.data();
+      Object.assign(STATE.profile, d.profile || {});
+      Object.assign(STATE.stats, d.stats || {});
+      STATE.badges = d.badges || [];
+      STATE.progress = d.progress || {};
+      STATE.activity = d.activity || [];
+      STATE.weeklyXP = d.weeklyXP || [0,0,0,0,0,0,0];
+    }
+  } catch(e) { console.error("Load error", e); }
+}
+async function saveSubmission(track, chapter, type, code, output, passed) {
+  if (!useFirebase || !STATE.user) return;
+  try {
+    await db.collection('users').doc(STATE.user.uid).collection('submissions').add({
+      track, chapter, type, code, output: String(output).slice(0, 2000), passed,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) { console.error(e); }
+}
+
+/* ================================================================
+   AUTH
+   ================================================================ */
+document.querySelectorAll('[data-authtab]').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('[data-authtab]').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const tab = t.dataset.authtab;
+    document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+    document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+  };
+});
+
+document.getElementById('loginForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  document.getElementById('loginBtnText').innerHTML = '<div class="spinner"></div>';
+  try {
+    if (useFirebase) {
+      await auth.signInWithEmailAndPassword(email, pass);
+    } else {
+      // Mode lokal — tanpa Firebase
+      onAuthOk({ uid: 'local', displayName: email.split('@')[0], email });
+    }
+  } catch(e) {
+    errEl.textContent = friendlyAuthError(e.code || e.message);
+    document.getElementById('loginBtnText').textContent = 'Masuk';
+  }
+};
+
+document.getElementById('registerForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('regName').value;
+  const email = document.getElementById('regEmail').value;
+  const pass = document.getElementById('regPass').value;
+  const errEl = document.getElementById('regError');
+  errEl.textContent = '';
+  document.getElementById('regBtnText').innerHTML = '<div class="spinner"></div>';
+  try {
+    if (useFirebase) {
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+      await cred.user.updateProfile({ displayName: name });
+      STATE.profile.nama = name;
+      STATE.profile.email = email;
+      await saveUserData();
+    } else {
+      STATE.profile.nama = name;
+      STATE.profile.email = email;
+      onAuthOk({ uid: 'local', displayName: name, email });
+    }
+  } catch(e) {
+    errEl.textContent = friendlyAuthError(e.code || e.message);
+    document.getElementById('regBtnText').textContent = 'Daftar';
+  }
+};
+
+async function loginWithGoogle() {
+  if (!useFirebase) { toast('Google Sign-In butuh Firebase aktif. Isi config dulu.', 'error'); return; }
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+  } catch(e) { toast(friendlyAuthError(e.code || e.message), 'error'); }
+}
+
+function friendlyAuthError(code) {
+  const map = {
+    'auth/invalid-email': 'Format email tidak valid.',
+    'auth/user-not-found': 'Akun dengan email ini tidak ditemukan.',
+    'auth/wrong-password': 'Password salah.',
+    'auth/email-already-in-use': 'Email sudah terdaftar. Coba login.',
+    'auth/weak-password': 'Password terlalu lemah (minimal 6 karakter).',
+    'auth/invalid-credential': 'Email atau password salah.',
+    'auth/popup-closed-by-user': 'Login Google dibatalkan.',
+  };
+  return map[code] || code;
+}
+
+if (useFirebase) {
+  auth.onAuthStateChanged(async (u) => {
+    if (u) {
+      await loadUserData(u.uid);
+      onAuthOk({ uid: u.uid, displayName: u.displayName || STATE.profile.nama, email: u.email, photoURL: u.photoURL });
+    }
+  });
+}
+
+function onAuthOk(u) {
+  STATE.user = u;
+  STATE.profile.nama = STATE.profile.nama || u.displayName || 'User';
+  STATE.profile.email = u.email || STATE.profile.email;
+  if (u.photoURL) STATE.profile.photoURL = u.photoURL;
+
+  // Streak & daily login XP
+  const today = new Date().toDateString();
+  if (STATE.stats.lastLogin !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    STATE.stats.streak = (STATE.stats.lastLogin === yesterday) ? STATE.stats.streak + 1 : 1;
+    STATE.stats.lastLogin = today;
+    addXP(5, 'Login harian +5 XP');
+    checkBadges();
+  }
+
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  applyTheme();
+  refreshHeader();
+  route('dashboard');
+  setTimeout(() => lucide.createIcons(), 50);
+}
+
+function confirmLogout() {
+  showModal({
+    title: 'Keluar dari akun?',
+    text: 'Kamu akan kembali ke halaman login.',
+    confirmText: 'Keluar', confirmStyle: 'btn-danger',
+    onConfirm: async () => {
+      if (useFirebase) await auth.signOut();
+      location.reload();
+    }
+  });
+}
+
+/* ================================================================
+   XP / BADGES / ACTIVITY
+   ================================================================ */
+function addXP(amount, reason) {
+  STATE.stats.totalXP += amount;
+  STATE.stats.level = getLevel(STATE.stats.totalXP).num;
+  // weekly bucket
+  const day = (new Date().getDay() + 6) % 7; // Sen=0
+  STATE.weeklyXP[day] = (STATE.weeklyXP[day] || 0) + amount;
+  toast(`+${amount} XP — ${reason}`, 'xp');
+  logActivity(`🎯 ${reason}`);
+  refreshHeader();
+  saveUserData();
+}
+function logActivity(text) {
+  STATE.activity.unshift({ text, time: Date.now() });
+  STATE.activity = STATE.activity.slice(0, 20);
+}
+function checkBadges() {
+  const earn = (id) => {
+    if (STATE.badges.find(b => b.id === id)) return;
+    const b = ALL_BADGES.find(x => x.id === id);
+    if (!b) return;
+    STATE.badges.push({ id, name: b.name, earnedAt: Date.now() });
+    toast(`🏆 Badge baru: ${b.name}!`, 'success');
+    logActivity(`🏆 Mendapat badge "${b.name}"`);
+  };
+  if (chapterComplete('sql', 1)) earn('first_query');
+  if (chapterComplete('python', 1)) earn('snake_starter');
+  if (STATE.stats.streak >= 3) earn('streak_3');
+  if ([1,2,3,4,5,6].every(n => chapterComplete('sql', n))) earn('sql_master');
+  if ([1,2,3,4,5,6].every(n => chapterComplete('python', n))) earn('pythonista');
+  if ([1,2,3,4,5,6].every(n => chapterComplete('sql', n)) &&
+      [1,2,3,4,5,6].every(n => chapterComplete('python', n))) earn('data_ruler');
+}
+function chapterComplete(track, n) {
+  const p = STATE.progress[`${track}_${n}`];
+  return p && p.challengeCompleted;
+}
+function chapterUnlocked(track, n) {
+  if (n === 1) return true;
+  return chapterComplete(track, n - 1);
+}
+function progressOf(track) {
+  const total = 6;
+  let done = 0;
+  for (let i=1; i<=total; i++) if (chapterComplete(track, i)) done++;
+  return Math.round((done/total)*100);
+}
+
+/* ================================================================
+   TOAST & MODAL
+   ================================================================ */
+function toast(msg, type='success') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<div>${msg}</div>`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(100%)'; t.style.transition='all .3s'; }, 3500);
+  setTimeout(() => t.remove(), 4000);
+}
+function showModal({ title, text, confirmText='OK', confirmStyle='btn-primary', cancelText='Batal', onConfirm }) {
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-overlay">
+      <div class="modal">
+        <div class="modal-title">${title}</div>
+        <div class="modal-text">${text}</div>
+        <div class="modal-actions">
+          <button class="btn" id="mCancel">${cancelText}</button>
+          <button class="btn ${confirmStyle}" id="mOk">${confirmText}</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('mCancel').onclick = () => root.innerHTML = '';
+  document.getElementById('mOk').onclick = () => { root.innerHTML = ''; onConfirm && onConfirm(); };
+}
+
+/* ================================================================
+   ROUTING & RENDER
+   ================================================================ */
+document.querySelectorAll('[data-route]').forEach(el => {
+  el.onclick = () => route(el.dataset.route);
+});
+
+let currentRoute = 'dashboard';
+function route(name, params={}) {
+  currentRoute = name;
+  document.querySelectorAll('[data-route]').forEach(el => el.classList.toggle('active', el.dataset.route === name));
+  const content = document.getElementById('pageContent');
+  content.innerHTML = '';
+  switch(name) {
+    case 'dashboard': renderDashboard(content); break;
+    case 'sql': renderTrack(content, 'sql'); break;
+    case 'python': renderTrack(content, 'python'); break;
+    case 'profile': renderProfile(content); break;
+    case 'settings': renderSettings(content); break;
+    case 'chapter': renderChapter(content, params.track, params.id); break;
+  }
+  setTimeout(() => lucide.createIcons(), 30);
+}
+
+function refreshHeader() {
+  document.getElementById('userNameTop').textContent = STATE.profile.nama;
+  const lv = getLevel(STATE.stats.totalXP);
+  document.getElementById('userLevelTop').textContent = `Level ${lv.num} — ${lv.name}`;
+  document.getElementById('userAvatar').textContent = (STATE.profile.nama || 'U').charAt(0).toUpperCase();
+}
+
+function setPage(title, sub) {
+  document.getElementById('pageTitle').textContent = title;
+  document.getElementById('pageSub').textContent = sub;
+}
+
+/* ================================================================
+   DASHBOARD
+   ================================================================ */
+function renderDashboard(c) {
+  setPage('Dashboard', `Hai ${STATE.profile.nama}, ayo lanjut belajar!`);
+  const sqlP = progressOf('sql'), pyP = progressOf('python');
+  const lv = getLevel(STATE.stats.totalXP);
+  const nextDelta = lv.next ? lv.next - STATE.stats.totalXP : 0;
+  const quote = QUOTES[new Date().getDate() % QUOTES.length];
+  const lastChapter = findLastIncomplete();
+
+  c.innerHTML = `
+    <div class="grid-3" style="margin-bottom:20px;">
+      <div class="card stat-card">
+        <div class="stat-icon"><i data-lucide="flame"></i></div>
+        <div class="stat-label">Streak Harian</div>
+        <div class="stat-value">${STATE.stats.streak} <span style="font-size:14px; color:var(--muted)">hari</span></div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon"><i data-lucide="zap"></i></div>
+        <div class="stat-label">Total XP</div>
+        <div class="stat-value">${STATE.stats.totalXP}</div>
+        <div class="level-bar-wrap"><div class="level-bar-fill" style="width:${lv.next ? ((STATE.stats.totalXP - lv.min)/(lv.next - lv.min))*100 : 100}%"></div></div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Level ${lv.num} — ${lv.name}${lv.next ? ` (${nextDelta} XP lagi)` : ' (MAX)'}</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon"><i data-lucide="award"></i></div>
+        <div class="stat-label">Badge</div>
+        <div class="stat-value">${STATE.badges.length}<span style="font-size:14px; color:var(--muted)">/${ALL_BADGES.length}</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="margin-bottom:16px;">Progress Belajar</h3>
+        <div style="display:flex; gap:24px; align-items:center;">
+          <canvas id="progressChart" width="180" height="180"></canvas>
+          <div style="flex:1;">
+            <div style="margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; font-size:14px;"><span>📊 SQL</span><span>${sqlP}%</span></div>
+              <div class="level-bar-wrap"><div class="level-bar-fill" style="width:${sqlP}%"></div></div>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:14px;"><span>🐍 Python</span><span>${pyP}%</span></div>
+              <div class="level-bar-wrap"><div class="level-bar-fill" style="width:${pyP}%"></div></div>
+            </div>
+            ${lastChapter ? `<button class="btn btn-primary" style="margin-top:18px;" onclick="route('chapter', {track:'${lastChapter.track}', id:${lastChapter.id}})"><i data-lucide="play"></i> Lanjutkan Belajar</button>` : `<div style="margin-top:18px; color:var(--muted); font-size:13px;">🎉 Semua chapter selesai!</div>`}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Aktivitas Terakhir</h3>
+        ${STATE.activity.slice(0,5).map(a => `
+          <div class="activity-item">
+            <div class="activity-icon">⚡</div>
+            <div class="activity-text">
+              ${a.text}
+              <div class="activity-time">${timeAgo(a.time)}</div>
+            </div>
+          </div>
+        `).join('') || `<div style="color:var(--muted); font-size:13px;">Belum ada aktivitas. Mulai belajar yuk!</div>`}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3 style="margin-bottom:12px;">XP Mingguan</h3>
+      <canvas id="weeklyChart" height="80"></canvas>
+    </div>
+
+    <div class="callout" style="margin-top:20px;">
+      <div class="callout-title">💡 Quote Hari Ini</div>
+      <div>"${quote}"</div>
+    </div>
+  `;
+
+  // Progress ring
+  const ctx = document.getElementById('progressChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['SQL', 'Python', 'Belum'],
+      datasets: [{
+        data: [sqlP, pyP, Math.max(0, 200 - sqlP - pyP)],
+        backgroundColor: ['#6c63ff', '#4caf82', '#2c2c36'],
+        borderWidth: 0
+      }]
+    },
+    options: { cutout: '70%', plugins: { legend: { display: false } } }
+  });
+
+  // Weekly
+  const wctx = document.getElementById('weeklyChart').getContext('2d');
+  new Chart(wctx, {
+    type: 'bar',
+    data: {
+      labels: ['Sen','Sel','Rab','Kam','Jum','Sab','Min'],
+      datasets: [{ data: STATE.weeklyXP, backgroundColor: '#6c63ff', borderRadius: 6 }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { color: '#888' } }, x: { ticks: { color: '#888' } } }
+    }
+  });
+}
+
+function findLastIncomplete() {
+  for (const track of ['sql','python']) {
+    for (let i=1; i<=6; i++) {
+      if (chapterUnlocked(track, i) && !chapterComplete(track, i)) {
+        return { track, id: i };
+      }
+    }
+  }
+  return null;
+}
+function timeAgo(ts) {
+  const d = Date.now() - ts;
+  if (d < 60000) return 'baru saja';
+  if (d < 3600000) return Math.floor(d/60000) + ' menit lalu';
+  if (d < 86400000) return Math.floor(d/3600000) + ' jam lalu';
+  return Math.floor(d/86400000) + ' hari lalu';
+}
+
+/* ================================================================
+   TRACK PAGE
+   ================================================================ */
+function renderTrack(c, track) {
+  const isSQL = track === 'sql';
+  setPage(isSQL ? 'Track SQL' : 'Track Python', isSQL ? 'Belajar query database step by step' : 'Belajar Python untuk analisis data');
+  const chapters = COURSES[track];
+  c.innerHTML = `
+    <div class="track-header">
+      <div>
+        <div style="font-size:14px; color:var(--muted)">Progress</div>
+        <div style="font-size:20px; font-weight:600;">${progressOf(track)}% selesai</div>
+      </div>
+    </div>
+    <div class="chapter-list">
+      ${chapters.map(ch => {
+        const unlocked = chapterUnlocked(track, ch.id);
+        const done = chapterComplete(track, ch.id);
+        const p = STATE.progress[`${track}_${ch.id}`] || {};
+        return `
+          <div class="card chapter-card ${unlocked ? '' : 'locked'}" ${unlocked ? `onclick="route('chapter', {track:'${track}', id:${ch.id}})"` : ''}>
+            <div class="chapter-num">Chapter ${ch.id}</div>
+            <div class="chapter-title">${ch.title}</div>
+            <div class="chapter-desc">${ch.desc}</div>
+            <div class="chapter-meta">
+              ${done ? `<span class="pill pill-success"><i data-lucide="check" style="width:12px;height:12px;"></i> Selesai</span>` :
+                unlocked ? `<span class="pill">Tersedia</span>` :
+                `<span class="pill pill-muted"><i data-lucide="lock" style="width:12px;height:12px;"></i> Terkunci</span>`}
+              ${p.quizScore ? `<span class="pill pill-warning">Kuis: ${p.quizScore}</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+/* ================================================================
+   CHAPTER PAGE — 4 tabs
+   ================================================================ */
+let currentChapter = null;
+let chapterTab = 'materi';
+let sandboxEditor = null;
+
+function renderChapter(c, track, id) {
+  const ch = COURSES[track].find(x => x.id === id);
+  currentChapter = { track, id, ch };
+  const key = `${track}_${id}`;
+  if (!STATE.progress[key]) STATE.progress[key] = { materiDone:false, quizScore:0, quizAttempts:0, challengeCompleted:false, challengeAttempts:0, hintsUsed:0, xpEarned:0 };
+
+  setPage(ch.title, `${track.toUpperCase()} • Chapter ${id} • ~${ch.readMin} menit baca`);
+  const p = STATE.progress[key];
+  const challengeUnlocked = p.quizScore >= 60;
+
+  c.innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="route('${track}')" style="margin-bottom:12px;"><i data-lucide="arrow-left"></i> Kembali</button>
+    <div class="tabs">
+      <div class="tab active" data-ctab="materi">📖 Materi</div>
+      ${track === 'sql' ? '<div class="tab" data-ctab="data">🗂️ Lihat Data</div>' : ''}
+      <div class="tab" data-ctab="sandbox">💻 Sandbox</div>
+      <div class="tab" data-ctab="quiz">❓ Kuis</div>
+      <div class="tab ${challengeUnlocked ? '' : 'disabled'}" data-ctab="challenge" title="${challengeUnlocked ? '' : 'Selesaikan kuis dengan skor min. 60 untuk membuka'}">🏆 Tantangan</div>
+    </div>
+    <div id="chapterTabContent"></div>
+  `;
+
+  document.querySelectorAll('[data-ctab]').forEach(t => {
+    t.onclick = () => {
+      if (t.classList.contains('disabled')) {
+        toast('Selesaikan kuis dengan skor minimal 60 dulu ya!', 'error');
+        return;
+      }
+      chapterTab = t.dataset.ctab;
+      document.querySelectorAll('[data-ctab]').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      renderChapterTab();
+    };
+  });
+  chapterTab = 'materi';
+  renderChapterTab();
+}
+
+function persistEditors() {
+  // Simpan isi editor yang masih hidup ke STATE.drafts sebelum DOM diganti
+  if (!currentChapter) return;
+  const base = `${currentChapter.track}_${currentChapter.id}`;
+  try {
+    if (sandboxEditor && document.body.contains(sandboxEditor.getWrapperElement())) {
+      STATE.drafts[`${base}_sandbox`] = sandboxEditor.getValue();
+    }
+  } catch(_) {}
+  try {
+    if (challengeEditor && document.body.contains(challengeEditor.getWrapperElement())) {
+      STATE.drafts[`${base}_challenge`] = challengeEditor.getValue();
+    }
+  } catch(_) {}
+}
+
+function renderChapterTab() {
+  persistEditors();
+  const { track, id, ch } = currentChapter;
+  const key = `${track}_${id}`;
+  const content = CHAPTER_CONTENT[key] || defaultChapterContent(track, id, ch);
+  const wrap = document.getElementById('chapterTabContent');
+
+  if (chapterTab === 'materi') {
+    wrap.innerHTML = `<div class="materi-content">${content.materi}</div>
+      <div style="margin-top:24px;">
+        <button class="btn btn-primary" onclick="completeMateri()"><i data-lucide="check"></i> Tandai Sudah Baca (+10 XP)</button>
+      </div>`;
+  }
+  else if (chapterTab === 'data') {
+    renderDataTab(wrap);
+  }
+  else if (chapterTab === 'sandbox') {
+    wrap.innerHTML = `
+      <div class="sandbox">
+        <div class="editor-toolbar">
+          <button class="btn btn-primary" id="runBtn"><i data-lucide="play"></i> Jalankan</button>
+          <button class="btn" id="resetBtn"><i data-lucide="rotate-ccw"></i> Reset</button>
+          <button class="btn" id="saveBtn"><i data-lucide="save"></i> Simpan</button>
+          <div style="margin-left:auto; color:var(--muted); font-size:13px;" id="engineStatus"></div>
+        </div>
+        <div class="editor-wrap"><textarea id="codeEditor"></textarea></div>
+        <div class="output-panel" id="outputPanel">Output akan muncul di sini. Klik "Jalankan" untuk mencoba.</div>
+      </div>
+    `;
+    const starter = content.sandboxStarter || (track === 'sql' ? '-- Tulis query SQL kamu di sini\nSELECT * FROM produk LIMIT 5;' : '# Tulis kode Python kamu di sini\nprint("Halo dunia")');
+    const draftKey = `${track}_${id}_sandbox`;
+    document.getElementById('codeEditor').value = STATE.drafts[draftKey] ?? starter;
+    sandboxEditor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+      lineNumbers: true,
+      mode: track === 'sql' ? 'text/x-sql' : 'python',
+      theme: STATE.profile.darkMode ? 'dracula' : 'default',
+      indentUnit: 2, tabSize: 2,
+    });
+    document.getElementById('runBtn').onclick = () => runSandbox();
+    document.getElementById('resetBtn').onclick = () => { delete STATE.drafts[draftKey]; sandboxEditor.setValue(starter); };
+    document.getElementById('saveBtn').onclick = async () => {
+      await saveSubmission(track, id, 'sandbox', sandboxEditor.getValue(), '', false);
+      toast('Kode tersimpan ke akun kamu.', 'success');
+    };
+  }
+  else if (chapterTab === 'quiz') {
+    renderQuiz(wrap, content.quiz || defaultQuiz());
+  }
+  else if (chapterTab === 'challenge') {
+    renderChallenge(wrap, content.challenge || defaultChallenge(track));
+  }
+
+  setTimeout(() => lucide.createIcons(), 30);
+}
+
+/* ---------- TAB LIHAT DATA (khusus SQL) ---------- */
+const TABLE_INFO = {
+  produk: {
+    desc: "Daftar barang yang dijual toko.",
+    cols: [
+      ["id","INTEGER","Nomor unik produk (kunci utama)"],
+      ["nama_produk","TEXT","Nama barang"],
+      ["kategori","TEXT","Kelompok: Sembako, Perawatan, Minuman, Makanan"],
+      ["harga","INTEGER","Harga jual (Rupiah)"],
+      ["stok","INTEGER","Jumlah stok tersedia"],
+    ]
+  },
+  pelanggan: {
+    desc: "Data pelanggan yang terdaftar.",
+    cols: [
+      ["id","INTEGER","Nomor unik pelanggan (kunci utama)"],
+      ["nama","TEXT","Nama pelanggan"],
+      ["kota","TEXT","Kota domisili"],
+      ["tanggal_daftar","TEXT","Tanggal mulai mendaftar"],
+    ]
+  },
+  transaksi: {
+    desc: "Catatan pembelian. Menghubungkan pelanggan dengan produk.",
+    cols: [
+      ["id","INTEGER","Nomor unik transaksi (kunci utama)"],
+      ["id_pelanggan","INTEGER","Mengacu ke produk.id → siapa pembelinya"],
+      ["id_produk","INTEGER","Mengacu ke produk.id → barang apa"],
+      ["jumlah","INTEGER","Banyaknya barang dibeli"],
+      ["tanggal","TEXT","Tanggal transaksi"],
+    ]
+  }
+};
+async function renderDataTab(wrap) {
+  wrap.innerHTML = `
+    <div class="callout" style="margin-bottom:18px;">
+      <div class="callout-title">🗂️ Kenali Tabelnya Dulu</div>
+      Sebelum menulis query, lihat dulu bentuk ketiga tabel di database toko ini. Perhatikan nama kolom dan contoh isinya — kamu akan memakainya di Sandbox & Tantangan.
+    </div>
+    <div id="dataTablesArea"><div class="center" style="padding:40px;"><div class="spinner"></div> &nbsp;Memuat data tabel...</div></div>
+  `;
+  const area = document.getElementById('dataTablesArea');
+  let html = '';
+  for (const tbl of ['produk','pelanggan','transaksi']) {
+    const info = TABLE_INFO[tbl];
+    const r = await runSQL(`SELECT * FROM ${tbl}`);
+    const totalRows = r.ok ? r.rows.length : 0;
+    const previewRows = r.ok ? r.rows.slice(0, 6) : [];
+    html += `
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+          <div>
+            <h3 style="margin:0; color:var(--primary);">📋 ${tbl}</h3>
+            <div style="font-size:13px; color:var(--muted);">${info.desc}</div>
+          </div>
+          <span class="pill pill-muted">${totalRows} baris • ${info.cols.length} kolom</span>
+        </div>
+
+        <div style="font-size:12px; text-transform:uppercase; color:var(--muted); margin:16px 0 8px; letter-spacing:.5px;">Struktur Kolom</div>
+        <table class="output-table" style="margin-bottom:18px;">
+          <thead><tr><th>Kolom</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+          <tbody>
+            ${info.cols.map(c=>`<tr><td class="mono" style="color:var(--primary);">${c[0]}</td><td class="mono" style="color:var(--muted);">${c[1]}</td><td>${c[2]}</td></tr>`).join('')}
+          </tbody>
+        </table>
+
+        <div style="font-size:12px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; letter-spacing:.5px;">Contoh Isi Data (${Math.min(6,totalRows)} dari ${totalRows} baris)</div>
+        ${r.ok ? renderSQLTable(r.cols, previewRows) : `<div class="output-panel error">${r.error}</div>`}
+      </div>
+    `;
+  }
+  area.innerHTML = html;
+}
+
+async function runSandbox() {
+  const code = sandboxEditor.getValue();
+  const out = document.getElementById('outputPanel');
+  const status = document.getElementById('engineStatus');
+  out.classList.remove('error');
+  out.innerHTML = '<div class="spinner"></div> Menjalankan...';
+  status.textContent = currentChapter.track === 'sql' ? 'Memuat sql.js...' : 'Memuat Pyodide (pertama kali bisa 20-30 detik)...';
+
+  if (currentChapter.track === 'sql') {
+    const r = await runSQL(code);
+    status.textContent = 'sql.js siap';
+    if (!r.ok) { out.classList.add('error'); out.textContent = r.error; return; }
+    if (r.rows.length === 0) { out.textContent = r.message || '(0 baris)'; return; }
+    out.innerHTML = renderSQLTable(r.cols, r.rows) + `<div style="margin-top:8px; color:var(--muted); font-size:12px;">${r.rows.length} baris</div>`;
+  } else {
+    const r = await runPython(code);
+    status.textContent = 'Pyodide siap';
+    if (!r.ok) { out.classList.add('error'); out.textContent = r.error; return; }
+    out.textContent = r.output;
+  }
+}
+function renderSQLTable(cols, rows) {
+  return `<table class="output-table"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+    <tbody>${rows.slice(0,100).map(r=>`<tr>${r.map(v=>`<td>${v===null?'NULL':v}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+function completeMateri() {
+  const key = `${currentChapter.track}_${currentChapter.id}`;
+  if (STATE.progress[key].materiDone) { toast('Sudah ditandai selesai sebelumnya.', 'success'); return; }
+  STATE.progress[key].materiDone = true;
+  addXP(10, `Materi ${currentChapter.ch.title}`);
+}
+
+/* ---------- KUIS ---------- */
+let quizState = null;
+function renderQuiz(wrap, quiz) {
+  quizState = { quiz, answers: Array(quiz.length).fill(null), submitted: false };
+  wrap.innerHTML = `
+    <div id="quizList"></div>
+    <button class="btn btn-primary" id="submitQuiz" style="margin-top:16px;"><i data-lucide="check-circle"></i> Kirim Jawaban</button>
+    <div id="quizResult" style="margin-top:16px;"></div>
+  `;
+  renderQuizList();
+  document.getElementById('submitQuiz').onclick = submitQuiz;
+}
+function renderQuizList() {
+  const list = document.getElementById('quizList');
+  list.innerHTML = quizState.quiz.map((q, qi) => `
+    <div class="card quiz-question">
+      <div class="quiz-q-text">${qi+1}. ${q.q}</div>
+      ${q.opts.map((opt, oi) => `
+        <div class="quiz-option ${quizState.answers[qi]===oi?'selected':''} ${quizState.submitted ? (oi===q.ans?'correct':(quizState.answers[qi]===oi?'wrong':'')) : ''}"
+             onclick="${quizState.submitted?'':`pickAnswer(${qi},${oi})`}">${opt}</div>
+      `).join('')}
+      ${quizState.submitted ? `<div class="quiz-feedback ${quizState.answers[qi]===q.ans?'correct':'wrong'}">
+        ${quizState.answers[qi]===q.ans?'✓ Benar!':'✗ Kurang tepat.'} ${q.exp || ''}
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+function pickAnswer(qi, oi) { quizState.answers[qi] = oi; renderQuizList(); }
+function submitQuiz() {
+  if (quizState.answers.some(a => a === null)) { toast('Jawab semua soal dulu ya!', 'error'); return; }
+  quizState.submitted = true;
+  const correct = quizState.quiz.filter((q,i) => quizState.answers[i] === q.ans).length;
+  const score = Math.round((correct / quizState.quiz.length) * 100);
+  const key = `${currentChapter.track}_${currentChapter.id}`;
+  const prev = STATE.progress[key].quizScore || 0;
+  STATE.progress[key].quizAttempts = (STATE.progress[key].quizAttempts || 0) + 1;
+  STATE.progress[key].quizScore = Math.max(prev, score);
+  renderQuizList();
+  const res = document.getElementById('quizResult');
+  res.innerHTML = `<div class="card" style="text-align:center;">
+    <div style="font-size:28px; font-weight:600;">Skor: ${score}/100</div>
+    <div style="color:var(--muted); margin-top:6px;">${correct} dari ${quizState.quiz.length} jawaban benar</div>
+    ${score >= 60 ? `<div style="color:var(--success); margin-top:10px;">✓ Tab Tantangan terbuka!</div>` : `<div style="color:var(--error); margin-top:10px;">Skor minimal 60 untuk membuka Tantangan. Coba lagi!</div>`}
+    <button class="btn" style="margin-top:14px;" onclick="renderQuiz(document.getElementById('chapterTabContent'), CHAPTER_CONTENT['${key}']?.quiz || defaultQuiz())">Ulangi Kuis</button>
+  </div>`;
+  if (score > prev) addXP(20 + (score === 100 ? 10 : 0), `Kuis ${currentChapter.ch.title}`);
+  // re-render tabs (challenge state)
+  document.querySelectorAll('[data-ctab="challenge"]').forEach(t => t.classList.toggle('disabled', score < 60 && prev < 60));
+  saveUserData();
+}
+
+/* ---------- TANTANGAN ---------- */
+let challengeState = null;
+let challengeEditor = null;
+function renderChallenge(wrap, ch) {
+  challengeState = { ch, hintsRevealed: 0 };
+  wrap.innerHTML = `
+    <div class="challenge-desc">
+      <h3 style="margin-bottom:8px;">${ch.title}</h3>
+      <div style="color:var(--muted); margin-bottom:12px;">${ch.desc}</div>
+      <div><strong>Expected output:</strong></div>
+      <div class="expected-box mono">${escapeHtml(ch.expectedDisplay || ch.expected)}</div>
+      <div class="hints-row">
+        <button class="hint-btn" onclick="revealHint(0)">💡 Hint 1 (-10 XP)</button>
+        <button class="hint-btn" onclick="revealHint(1)">💡 Hint 2 (-10 XP)</button>
+        <button class="hint-btn" onclick="revealHint(2)">💡 Hint 3 (-10 XP)</button>
+      </div>
+      <div id="hintsArea"></div>
+    </div>
+    <div class="sandbox" style="height: 420px;">
+      <div class="editor-toolbar">
+        <button class="btn btn-success" id="checkBtn"><i data-lucide="check-circle"></i> Jalankan & Periksa</button>
+        <div style="margin-left:auto; color:var(--muted); font-size:13px;" id="challengeStatus"></div>
+      </div>
+      <div class="editor-wrap"><textarea id="challengeEditor"></textarea></div>
+      <div class="output-panel" id="challengeOutput">Hasil akan tampil di sini.</div>
+    </div>
+  `;
+  const chDraftKey = `${currentChapter.track}_${currentChapter.id}_challenge`;
+  document.getElementById('challengeEditor').value = STATE.drafts[chDraftKey] ?? (ch.starter || '');
+  challengeEditor = CodeMirror.fromTextArea(document.getElementById('challengeEditor'), {
+    lineNumbers: true,
+    mode: currentChapter.track === 'sql' ? 'text/x-sql' : 'python',
+    theme: STATE.profile.darkMode ? 'dracula' : 'default',
+  });
+  document.getElementById('checkBtn').onclick = checkChallenge;
+}
+function revealHint(i) {
+  const area = document.getElementById('hintsArea');
+  const hints = challengeState.ch.hints || [];
+  if (!hints[i]) return;
+  if (area.querySelector(`[data-hint="${i}"]`)) return;
+  area.insertAdjacentHTML('beforeend', `<div class="hint-revealed" data-hint="${i}">Hint ${i+1}: ${hints[i]}</div>`);
+  challengeState.hintsRevealed++;
+  const key = `${currentChapter.track}_${currentChapter.id}`;
+  STATE.progress[key].hintsUsed = challengeState.hintsRevealed;
+  toast(`Hint terbuka — biaya 10 XP saat menyelesaikan.`, 'xp');
+}
+
+async function checkChallenge() {
+  const code = challengeEditor.getValue();
+  const out = document.getElementById('challengeOutput');
+  out.classList.remove('error');
+  out.innerHTML = '<div class="spinner"></div> Memeriksa...';
+  const key = `${currentChapter.track}_${currentChapter.id}`;
+  STATE.progress[key].challengeAttempts = (STATE.progress[key].challengeAttempts || 0) + 1;
+
+  let result, actualText;
+  if (currentChapter.track === 'sql') {
+    result = await runSQL(code);
+    if (!result.ok) { out.classList.add('error'); out.textContent = result.error; return; }
+    actualText = serializeSQLResult(result);
+    out.innerHTML = renderSQLTable(result.cols, result.rows);
+  } else {
+    result = await runPython(code);
+    if (!result.ok) { out.classList.add('error'); out.textContent = result.error; return; }
+    actualText = result.output.trim();
+    out.textContent = result.output;
+  }
+
+  const passed = challengeState.ch.validate
+    ? challengeState.ch.validate(result, code)
+    : normalizeOutput(actualText) === normalizeOutput(challengeState.ch.expected);
+
+  await saveSubmission(currentChapter.track, currentChapter.id, 'challenge', code, actualText, passed);
+
+  if (passed) {
+    if (STATE.progress[key].challengeCompleted) {
+      toast('✓ Sudah pernah selesai. Tapi tetap mantap!', 'success');
+      return;
+    }
+    STATE.progress[key].challengeCompleted = true;
+    const xp = Math.max(10, 50 - (challengeState.hintsRevealed * 10));
+    addXP(xp, `Tantangan ${currentChapter.ch.title}`);
+    STATE.progress[key].xpEarned = xp;
+    checkBadges();
+    out.insertAdjacentHTML('afterend', `<div class="callout" style="margin-top:12px;"><div class="callout-title">🎉 Berhasil!</div>Chapter ini selesai. Chapter berikutnya sudah terbuka.</div>`);
+  } else {
+    out.insertAdjacentHTML('afterend', `<div class="quiz-feedback wrong" style="margin-top:8px;">Output belum sesuai. Bandingkan dengan expected output dan coba lagi.</div>`);
+  }
+  saveUserData();
+}
+function serializeSQLResult(r) {
+  if (!r.rows.length) return '';
+  return r.cols.join('|') + '\n' + r.rows.map(row => row.join('|')).join('\n');
+}
+function normalizeOutput(s) {
+  return String(s).replace(/\s+/g,' ').trim().toLowerCase();
+}
+function escapeHtml(s) { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+/* ================================================================
+   DEFAULT PLACEHOLDERS — diganti penuh di Bagian 2
+   ================================================================ */
+function defaultChapterContent(track, id, ch) {
+  return {
+    materi: `<h2>${ch.title}</h2><p>Konten lengkap chapter ini sedang dimuat dari Bagian 2 dari generator.</p><div class="callout"><div class="callout-title">📌 Catatan</div>Materi penuh, kuis 5 soal, dan tantangan untuk chapter ini disediakan di Bagian 2 dari kode generator. Sandbox sudah aktif dan bisa kamu coba sekarang.</div>`,
+    sandboxStarter: track === 'sql' ? '-- Coba query ini\nSELECT nama_produk, harga FROM produk LIMIT 5;' : '# Coba kode ini\nprint("Halo, ini Python!")\nfor i in range(3):\n    print("Iterasi", i)',
+    quiz: defaultQuiz(),
+    challenge: defaultChallenge(track),
+  };
+}
+function defaultQuiz() {
+  return [
+    { q: "Placeholder — konten kuis lengkap di Bagian 2. Pilih A.", opts:["A","B","C","D"], ans:0, exp:"Ini placeholder." },
+    { q: "Placeholder 2. Pilih B.", opts:["A","B","C","D"], ans:1, exp:"" },
+    { q: "Placeholder 3. Pilih C.", opts:["A","B","C","D"], ans:2, exp:"" },
+    { q: "Placeholder 4. Pilih D.", opts:["A","B","C","D"], ans:3, exp:"" },
+    { q: "Placeholder 5. Pilih A.", opts:["A","B","C","D"], ans:0, exp:"" },
+  ];
+}
+function defaultChallenge(track) {
+  if (track === 'sql') {
+    return {
+      title: "Tantangan placeholder",
+      desc: "Tampilkan semua produk dengan harga di atas 20000.",
+      expected: "Konten lengkap di Bagian 2.",
+      expectedDisplay: "id|nama_produk|harga\n1|Beras 5kg|65000\n...",
+      starter: "SELECT nama_produk, harga FROM produk WHERE harga > 20000;",
+      hints: ["Pakai WHERE.", "Operator > untuk lebih besar dari.", "SELECT kolom yang diminta."],
+      validate: (r) => r.ok && r.rows && r.rows.length > 0 && r.rows.every(row => row[row.length-1] > 20000)
+    };
+  }
+  return {
+    title: "Tantangan placeholder",
+    desc: "Cetak angka 1 sampai 5.",
+    expected: "1\n2\n3\n4\n5",
+    expectedDisplay: "1\n2\n3\n4\n5",
+    starter: "for i in range(1, 6):\n    print(i)",
+    hints: ["Pakai for loop.", "range(1,6) menghasilkan 1..5.", "print() untuk mencetak."],
+  };
+}
+
+/* ================================================================
+   PROFIL
+   ================================================================ */
+function renderProfile(c) {
+  setPage('Profil', 'Akun dan pencapaianmu');
+  const lv = getLevel(STATE.stats.totalXP);
+  c.innerHTML = `
+    <div class="card" style="display:flex; gap:20px; align-items:center;">
+      <div class="avatar" style="width:72px; height:72px; font-size:28px;">${(STATE.profile.nama||'U').charAt(0).toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="font-size:20px; font-weight:600;">${STATE.profile.nama}</div>
+        <div style="color:var(--muted);">${STATE.profile.email||''}</div>
+        <div style="margin-top:6px;"><span class="pill">Level ${lv.num} — ${lv.name}</span> <span class="pill pill-warning">${STATE.stats.totalXP} XP</span> <span class="pill pill-success">${STATE.stats.streak} hari streak</span></div>
+      </div>
+      <button class="btn" onclick="editProfileModal()"><i data-lucide="edit-3"></i> Edit</button>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3 style="margin-bottom:14px;">Badge</h3>
+      <div class="badges-grid">
+        ${ALL_BADGES.map(b => {
+          const earned = STATE.badges.find(x => x.id === b.id);
+          return `<div class="badge-item ${earned?'earned':''}">
+            <div class="badge-emoji">${b.emoji}</div>
+            <div class="badge-name">${b.name}</div>
+            <div style="font-size:11px; color:var(--muted); margin-top:4px;">${b.desc}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3 style="margin-bottom:14px;">Riwayat Chapter</h3>
+      ${renderHistoryTable()}
+    </div>
+  `;
+}
+function renderHistoryTable() {
+  const rows = [];
+  for (const track of ['sql','python']) {
+    for (let i=1; i<=6; i++) {
+      const p = STATE.progress[`${track}_${i}`];
+      if (!p) continue;
+      rows.push(`<tr>
+        <td>${track.toUpperCase()} Ch ${i}</td>
+        <td>${COURSES[track][i-1].title}</td>
+        <td>${p.quizScore || '-'}</td>
+        <td>${p.challengeCompleted ? '<span class="pill pill-success">Selesai</span>' : '<span class="pill pill-muted">Berlangsung</span>'}</td>
+        <td>${p.xpEarned || 0} XP</td>
+      </tr>`);
+    }
+  }
+  if (!rows.length) return '<div style="color:var(--muted)">Belum ada riwayat.</div>';
+  return `<table class="output-table"><thead><tr><th>Chapter</th><th>Judul</th><th>Skor Kuis</th><th>Status</th><th>XP</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+}
+function editProfileModal() {
+  showModal({
+    title: 'Edit Profil',
+    text: `<div style="text-align:left;">
+      <label class="label">Nama</label>
+      <input class="input" id="editName" value="${STATE.profile.nama}" style="margin-bottom:10px;"/>
+      <label class="label">Foto URL</label>
+      <input class="input" id="editPhoto" value="${STATE.profile.photoURL||''}"/>
+    </div>`,
+    confirmText: 'Simpan',
+    onConfirm: () => {
+      STATE.profile.nama = document.getElementById('editName').value;
+      STATE.profile.photoURL = document.getElementById('editPhoto').value;
+      saveUserData();
+      refreshHeader();
+      route('profile');
+    }
+  });
+}
+
+/* ================================================================
+   PENGATURAN
+   ================================================================ */
+function renderSettings(c) {
+  setPage('Pengaturan', 'Sesuaikan pengalaman belajarmu');
+  c.innerHTML = `
+    <div class="card">
+      <h3 style="margin-bottom:14px;">Tampilan</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0;">
+        <div>
+          <div style="font-weight:500;">Mode Gelap</div>
+          <div style="font-size:13px; color:var(--muted);">Ramah di mata untuk belajar malam hari</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="darkToggle" ${STATE.profile.darkMode?'checked':''} onchange="toggleDark(this.checked)" />
+          <span>${STATE.profile.darkMode?'Aktif':'Nonaktif'}</span>
+        </label>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0;">
+        <div>
+          <div style="font-weight:500;">Ukuran Font Code Editor</div>
+          <div style="font-size:13px; color:var(--muted);">12 — 20 px</div>
+        </div>
+        <input type="range" min="12" max="20" value="${STATE.profile.fontSize}" oninput="setFontSize(this.value)" />
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px; border-color: var(--error);">
+      <h3 style="margin-bottom:10px; color: var(--error);">Zona Berbahaya</h3>
+      <p style="color:var(--muted); margin-bottom:12px;">Reset semua progress, badge, dan XP. Aksi ini tidak bisa dibatalkan.</p>
+      <button class="btn btn-danger" onclick="resetProgressFlow()"><i data-lucide="trash-2"></i> Reset Progress</button>
+    </div>
+  `;
+}
+function toggleDark(v) {
+  STATE.profile.darkMode = v;
+  applyTheme();
+  saveUserData();
+}
+function setFontSize(v) {
+  STATE.profile.fontSize = parseInt(v);
+  document.documentElement.style.setProperty('--editor-font', v + 'px');
+  saveUserData();
+}
+function applyTheme() {
+  document.body.dataset.theme = STATE.profile.darkMode ? 'dark' : 'light';
+}
+function resetProgressFlow() {
+  showModal({
+    title: 'Reset progress?',
+    text: 'Semua XP, badge, dan riwayat akan dihapus. Lanjutkan?',
+    confirmText: 'Ya, reset', confirmStyle: 'btn-danger',
+    onConfirm: () => {
+      showModal({
+        title: 'Konfirmasi sekali lagi',
+        text: 'Aksi ini permanen. Yakin?',
+        confirmText: 'Hapus semua', confirmStyle: 'btn-danger',
+        onConfirm: () => {
+          STATE.stats = { totalXP: 0, level: 1, streak: 0, lastLogin: null };
+          STATE.badges = []; STATE.progress = {}; STATE.activity = []; STATE.weeklyXP = [0,0,0,0,0,0,0];
+          saveUserData(); refreshHeader(); route('dashboard');
+          toast('Progress di-reset.', 'success');
+        }
+      });
+    }
+  });
+}
+
+/* ================================================================
+   STARTUP
+   ================================================================ */
+window.addEventListener('load', () => {
+  lucide.createIcons();
+  if (!useFirebase) {
+    // Tampilkan info bahwa mode lokal aktif
+    const note = document.createElement('div');
+    note.style.cssText = 'position:fixed; bottom:16px; left:16px; background:var(--surface); padding:10px 14px; border:1px solid var(--warning); border-radius:8px; font-size:12px; color:var(--warning); z-index:100;';
+    note.textContent = 'Mode demo aktif (Firebase belum dikonfigurasi). Progress tidak tersimpan permanen.';
+    document.body.appendChild(note);
+  }
+});
+</script>
+
+<!-- ================================================================
+     BAGIAN 2 — KONTEN LENGKAP 12 CHAPTER
+     File: chapters.js (akan diisi di lanjutan)
+     ================================================================ -->
+<script>
+/* ================================================================
+   BAGIAN 2 — KONTEN LENGKAP 12 CHAPTER
+   Setiap entry: { materi, sandboxStarter, quiz[5], challenge }
+   ================================================================ */
+
+/* ---------- SQL CHAPTER 1: Mengenal Database & SELECT ---------- */
+CHAPTER_CONTENT['sql_1'] = {
+  materi: `
+    <h2>Mengenal Database & SELECT</h2>
+    <p>Selamat datang di dunia SQL! Di chapter ini kamu akan belajar apa itu database dan cara mengambil data dengan perintah <code>SELECT</code>.</p>
+
+    <div class="analogi">
+      <strong>🏪 Analogi:</strong> Bayangkan database seperti sebuah <em>lemari arsip</em> di toko. Setiap laci adalah <strong>tabel</strong> (misal laci "produk", laci "pelanggan"). Di dalam laci ada banyak <strong>kartu</strong> (baris/row), dan setiap kartu punya kolom info yang sama (nama, harga, stok).
+    </div>
+
+    <h3>Struktur Tabel</h3>
+    <p>Di aplikasi ini ada 3 tabel toko:</p>
+    <ul>
+      <li><code>produk</code> — kolom: id, nama_produk, kategori, harga, stok</li>
+      <li><code>pelanggan</code> — kolom: id, nama, kota, tanggal_daftar</li>
+      <li><code>transaksi</code> — kolom: id, id_pelanggan, id_produk, jumlah, tanggal</li>
+    </ul>
+
+    <h3>Perintah SELECT</h3>
+    <p>SELECT artinya "ambilkan data". Bentuk dasarnya:</p>
+    <pre>SELECT kolom_yang_diinginkan
+FROM nama_tabel;</pre>
+
+    <h3>Contoh 1 — Ambil semua kolom</h3>
+    <p>Tanda bintang <code>*</code> berarti "semua kolom":</p>
+    <pre>SELECT * FROM produk;</pre>
+
+    <h3>Contoh 2 — Ambil kolom tertentu</h3>
+    <p>Sebutkan nama kolom dipisah koma:</p>
+    <pre>SELECT nama_produk, harga FROM produk;</pre>
+
+    <h3>Contoh 3 — Beri nama alias dengan AS</h3>
+    <pre>SELECT nama_produk AS Barang, harga AS Harga_Jual
+FROM produk;</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li><code>SELECT</code> = ambil data, <code>FROM</code> = dari tabel mana</li>
+        <li><code>*</code> = semua kolom; atau sebutkan nama kolom dipisah koma</li>
+        <li>Setiap perintah SQL diakhiri titik koma <code>;</code></li>
+        <li><code>AS</code> dipakai untuk memberi nama tampilan (alias)</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter: `-- Coba ambil semua data produk\nSELECT * FROM produk;\n\n-- Lalu coba ambil hanya nama dan harga\n-- SELECT nama_produk, harga FROM produk;`,
+  quiz: [
+    { q:"Apa fungsi perintah SELECT?", opts:["Menghapus data","Mengambil/menampilkan data","Membuat tabel baru","Mengubah data"], ans:1, exp:"SELECT digunakan untuk mengambil dan menampilkan data dari tabel." },
+    { q:"Apa arti tanda * pada SELECT * FROM produk?", opts:["Hanya kolom pertama","Mengalikan data","Semua kolom","Baris pertama saja"], ans:2, exp:"Tanda * berarti memilih semua kolom." },
+    { q:"Kata kunci apa yang menyebutkan asal tabel?", opts:["FROM","WHERE","TABLE","IN"], ans:0, exp:"FROM menentukan dari tabel mana data diambil." },
+    { q:"Bagaimana cara memilih kolom nama_produk dan harga saja?", opts:["SELECT produk","SELECT nama_produk, harga FROM produk","SELECT * FROM harga","GET nama_produk"], ans:1, exp:"Sebutkan nama kolom dipisah koma." },
+    { q:"Untuk memberi nama tampilan kolom, kita pakai kata kunci?", opts:["IS","NAME","AS","LIKE"], ans:2, exp:"AS digunakan untuk membuat alias kolom." },
+  ],
+  challenge: {
+    title:"Daftar Harga Produk",
+    desc:"Manajer toko ingin daftar sederhana berisi <strong>nama produk dan harganya saja</strong> untuk semua produk. Tampilkan kolom nama_produk dan harga dari tabel produk.",
+    expected:"nama_produk|harga",
+    expectedDisplay:"Tabel berisi 2 kolom: nama_produk dan harga, 20 baris produk.",
+    starter:"-- Tampilkan nama_produk dan harga dari semua produk\nSELECT ___, ___ FROM produk;",
+    hints:["Gunakan SELECT lalu sebutkan 2 nama kolom.","Kolomnya: nama_produk dan harga.","SELECT nama_produk, harga FROM produk;"],
+    validate:(r)=> r.ok && r.cols && r.cols.length===2 && r.cols.includes('nama_produk') && r.cols.includes('harga') && r.rows.length===20
+  }
+};
+
+/* ---------- SQL CHAPTER 2: Memfilter Data ---------- */
+CHAPTER_CONTENT['sql_2'] = {
+  materi: `
+    <h2>Memfilter Data dengan WHERE</h2>
+    <p>Seringkali kamu tidak ingin semua data, tapi hanya yang memenuhi syarat tertentu. Di sinilah <code>WHERE</code> berperan.</p>
+
+    <div class="analogi">
+      <strong>🔍 Analogi:</strong> WHERE seperti <em>saringan teh</em>. Semua air lewat, tapi hanya yang sesuai syarat (teh, bukan ampas) yang ditampilkan.
+    </div>
+
+    <h3>Bentuk Dasar</h3>
+    <pre>SELECT * FROM produk
+WHERE harga > 20000;</pre>
+
+    <h3>Operator Perbandingan</h3>
+    <ul>
+      <li><code>=</code> sama dengan, <code>!=</code> tidak sama</li>
+      <li><code>&gt;</code> lebih besar, <code>&lt;</code> lebih kecil, <code>&gt;=</code>, <code>&lt;=</code></li>
+    </ul>
+
+    <h3>Menggabungkan Syarat: AND, OR, NOT</h3>
+    <pre>-- Sembako DAN harga di bawah 20000
+SELECT * FROM produk
+WHERE kategori = 'Sembako' AND harga < 20000;
+
+-- Minuman ATAU Makanan
+SELECT * FROM produk
+WHERE kategori = 'Minuman' OR kategori = 'Makanan';</pre>
+
+    <h3>BETWEEN, IN, LIKE</h3>
+    <pre>-- Harga antara 10000 dan 30000
+SELECT * FROM produk WHERE harga BETWEEN 10000 AND 30000;
+
+-- Kategori termasuk dalam daftar
+SELECT * FROM produk WHERE kategori IN ('Minuman','Makanan');
+
+-- Nama mengandung kata 'Susu' (% = karakter bebas)
+SELECT * FROM produk WHERE nama_produk LIKE '%Susu%';</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li><code>WHERE</code> menyaring baris sesuai syarat</li>
+        <li>Teks ditulis dalam tanda kutip tunggal: <code>'Sembako'</code></li>
+        <li><code>AND</code> = semua syarat benar, <code>OR</code> = salah satu benar</li>
+        <li><code>BETWEEN a AND b</code> untuk rentang, <code>IN(...)</code> untuk daftar, <code>LIKE '%kata%'</code> untuk pencarian teks</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`-- Cari produk Sembako dengan harga di atas 20000\nSELECT nama_produk, harga FROM produk\nWHERE kategori = 'Sembako' AND harga > 20000;`,
+  quiz:[
+    { q:"Kata kunci untuk menyaring baris berdasarkan syarat?", opts:["FILTER","WHERE","ORDER","HAVING"], ans:1, exp:"WHERE menyaring baris." },
+    { q:"Bagaimana menulis nilai teks dalam SQL?", opts:["Tanda kutip tunggal 'teks'","Tanpa tanda apa pun","Kurung siku [teks]","Tanda dollar $teks$"], ans:0, exp:"Teks ditulis dengan kutip tunggal." },
+    { q:"WHERE harga BETWEEN 10000 AND 30000 akan memilih harga?", opts:["Hanya 10000 dan 30000","Di luar rentang itu","10000 sampai 30000 (termasuk batas)","Lebih dari 30000"], ans:2, exp:"BETWEEN inklusif, termasuk kedua batas." },
+    { q:"LIKE '%Susu%' mencocokkan?", opts:["Persis kata Susu saja","Apa pun yang mengandung 'Susu'","Diawali huruf S","Diakhiri Susu"], ans:1, exp:"% berarti karakter bebas di depan & belakang." },
+    { q:"Untuk syarat 'kategori Minuman ATAU Makanan' paling ringkas pakai?", opts:["AND","IN ('Minuman','Makanan')","BETWEEN","NOT"], ans:1, exp:"IN cocok untuk daftar nilai." },
+  ],
+  challenge:{
+    title:"Produk Murah Kategori Sembako",
+    desc:"Toko sedang promo. Tampilkan <strong>nama_produk dan harga</strong> untuk produk kategori <strong>Sembako</strong> yang harganya <strong>di bawah 20000</strong>.",
+    expected:"nama_produk|harga",
+    expectedDisplay:"Produk Sembako dengan harga < 20000 (Minyak Goreng, Gula, Mie Instan, Margarin).",
+    starter:"SELECT nama_produk, harga FROM produk\nWHERE kategori = '___' AND harga ___ 20000;",
+    hints:["Gabungkan dua syarat dengan AND.","kategori = 'Sembako' dan harga < 20000.","SELECT nama_produk, harga FROM produk WHERE kategori='Sembako' AND harga<20000;"],
+    validate:(r)=> r.ok && r.cols.includes('nama_produk') && r.cols.includes('harga') && r.rows.length>0 && r.rows.every(row=>{ const hi=r.cols.indexOf('harga'); return row[hi]<20000; })
+  }
+};
+
+/* ---------- SQL CHAPTER 3: Mengurutkan & Membatasi ---------- */
+CHAPTER_CONTENT['sql_3'] = {
+  materi:`
+    <h2>Mengurutkan & Membatasi Data</h2>
+    <p>Setelah menyaring, kamu sering perlu mengurutkan hasil dan membatasi jumlahnya.</p>
+
+    <div class="analogi">
+      <strong>🏆 Analogi:</strong> ORDER BY seperti membuat <em>papan peringkat</em>. LIMIT seperti mengatakan "tampilkan 3 besar saja".
+    </div>
+
+    <h3>ORDER BY — Mengurutkan</h3>
+    <pre>-- Termurah ke termahal (ASC = default)
+SELECT nama_produk, harga FROM produk ORDER BY harga ASC;
+
+-- Termahal ke termurah (DESC)
+SELECT nama_produk, harga FROM produk ORDER BY harga DESC;</pre>
+
+    <h3>LIMIT — Membatasi Jumlah</h3>
+    <pre>-- 5 produk termahal
+SELECT nama_produk, harga FROM produk
+ORDER BY harga DESC LIMIT 5;</pre>
+
+    <h3>OFFSET — Melewati Baris</h3>
+    <pre>-- Lewati 5 baris pertama, ambil 5 berikutnya (peringkat 6-10)
+SELECT nama_produk, harga FROM produk
+ORDER BY harga DESC LIMIT 5 OFFSET 5;</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li><code>ORDER BY kolom ASC</code> = menaik (kecil→besar), <code>DESC</code> = menurun</li>
+        <li><code>LIMIT n</code> = ambil n baris pertama</li>
+        <li><code>OFFSET m</code> = lewati m baris dulu</li>
+        <li>Urutan penulisan: WHERE → ORDER BY → LIMIT</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`-- 5 produk termahal\nSELECT nama_produk, harga FROM produk\nORDER BY harga DESC\nLIMIT 5;`,
+  quiz:[
+    { q:"Kata kunci untuk mengurutkan hasil?", opts:["SORT","ORDER BY","RANK","GROUP"], ans:1, exp:"ORDER BY mengurutkan hasil." },
+    { q:"Untuk urutan dari besar ke kecil pakai?", opts:["ASC","DESC","TOP","HIGH"], ans:1, exp:"DESC = descending (menurun)." },
+    { q:"LIMIT 3 berarti?", opts:["Lewati 3 baris","Ambil 3 baris saja","Urutkan 3 kolom","Hapus 3 baris"], ans:1, exp:"LIMIT membatasi jumlah baris." },
+    { q:"Jika ORDER BY ditulis tanpa ASC/DESC, urutannya?", opts:["Menurun","Acak","Menaik (ASC default)","Error"], ans:2, exp:"Default ORDER BY adalah ASC." },
+    { q:"Untuk melewati 10 baris pertama pakai?", opts:["SKIP 10","OFFSET 10","PASS 10","LIMIT -10"], ans:1, exp:"OFFSET melewati sejumlah baris." },
+  ],
+  challenge:{
+    title:"3 Produk Termurah",
+    desc:"Tampilkan <strong>3 produk dengan harga termurah</strong>. Tampilkan kolom nama_produk dan harga, urut dari yang paling murah.",
+    expected:"Kopi Sachet 2000",
+    expectedDisplay:"3 baris: Kopi Sachet (2000), Air Mineral (3000), Mie Instan (3500).",
+    starter:"SELECT nama_produk, harga FROM produk\nORDER BY harga ___\nLIMIT ___;",
+    hints:["Urutkan menaik dengan ASC.","Batasi hasil dengan LIMIT 3.","SELECT nama_produk, harga FROM produk ORDER BY harga ASC LIMIT 3;"],
+    validate:(r)=> r.ok && r.rows.length===3 && r.cols.includes('harga') && (()=>{ const hi=r.cols.indexOf('harga'); return r.rows[0][hi]<=r.rows[1][hi] && r.rows[1][hi]<=r.rows[2][hi] && r.rows[0][hi]===2000; })()
+  }
+};
+
+/* ---------- SQL CHAPTER 4: Agregasi Data ---------- */
+CHAPTER_CONTENT['sql_4'] = {
+  materi:`
+    <h2>Agregasi Data</h2>
+    <p>Agregasi adalah cara menghitung ringkasan dari banyak baris: jumlah, rata-rata, total, dll.</p>
+
+    <div class="analogi">
+      <strong>🧮 Analogi:</strong> Agregasi seperti seorang <em>kasir yang merekap</em>: "berapa total produk?", "berapa harga rata-rata?", "berapa stok terbanyak?".
+    </div>
+
+    <h3>Fungsi Agregasi</h3>
+    <ul>
+      <li><code>COUNT(*)</code> — menghitung jumlah baris</li>
+      <li><code>SUM(kolom)</code> — menjumlahkan nilai</li>
+      <li><code>AVG(kolom)</code> — rata-rata</li>
+      <li><code>MIN</code> / <code>MAX</code> — nilai terkecil / terbesar</li>
+    </ul>
+    <pre>SELECT COUNT(*) AS jumlah_produk,
+       AVG(harga) AS rata_harga,
+       MAX(harga) AS termahal
+FROM produk;</pre>
+
+    <h3>GROUP BY — Mengelompokkan</h3>
+    <p>Hitung ringkasan <em>per kelompok</em>:</p>
+    <pre>-- Jumlah produk per kategori
+SELECT kategori, COUNT(*) AS jumlah
+FROM produk
+GROUP BY kategori;</pre>
+
+    <h3>HAVING — Menyaring Hasil Grup</h3>
+    <p>WHERE menyaring baris, <code>HAVING</code> menyaring hasil grup:</p>
+    <pre>SELECT kategori, COUNT(*) AS jumlah
+FROM produk
+GROUP BY kategori
+HAVING COUNT(*) > 4;</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li>COUNT, SUM, AVG, MIN, MAX meringkas banyak baris jadi satu nilai</li>
+        <li><code>GROUP BY</code> membuat ringkasan per kelompok</li>
+        <li><code>HAVING</code> menyaring setelah pengelompokan (WHERE sebelum)</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`-- Jumlah produk dan rata-rata harga per kategori\nSELECT kategori, COUNT(*) AS jumlah, AVG(harga) AS rata_harga\nFROM produk\nGROUP BY kategori;`,
+  quiz:[
+    { q:"Fungsi untuk menghitung jumlah baris?", opts:["SUM","COUNT","AVG","TOTAL"], ans:1, exp:"COUNT menghitung jumlah baris." },
+    { q:"AVG(harga) menghasilkan?", opts:["Total harga","Harga tertinggi","Rata-rata harga","Jumlah produk"], ans:2, exp:"AVG = rata-rata." },
+    { q:"Untuk meringkas data per kelompok pakai?", opts:["GROUP BY","ORDER BY","WHERE","LIMIT"], ans:0, exp:"GROUP BY mengelompokkan." },
+    { q:"Perbedaan WHERE dan HAVING?", opts:["Sama saja","WHERE sebelum grouping, HAVING setelah","HAVING lebih cepat","WHERE untuk teks saja"], ans:1, exp:"HAVING menyaring hasil agregasi/grup." },
+    { q:"SUM(jumlah) FROM transaksi menghitung?", opts:["Banyaknya transaksi","Total seluruh jumlah barang","Rata-rata","Transaksi termahal"], ans:1, exp:"SUM menjumlahkan semua nilai kolom." },
+  ],
+  challenge:{
+    title:"Rekap Produk per Kategori",
+    desc:"Pemilik toko ingin tahu <strong>berapa banyak produk di tiap kategori</strong>. Tampilkan kolom <strong>kategori</strong> dan jumlah produk (beri alias <strong>jumlah</strong>), dikelompokkan per kategori.",
+    expected:"kategori|jumlah",
+    expectedDisplay:"Sembako 6, Perawatan 5, Minuman 5, Makanan 4 (urutan bebas).",
+    starter:"SELECT kategori, COUNT(*) AS jumlah\nFROM produk\nGROUP BY ___;",
+    hints:["Pakai COUNT(*) untuk menghitung.","Kelompokkan dengan GROUP BY kategori.","SELECT kategori, COUNT(*) AS jumlah FROM produk GROUP BY kategori;"],
+    validate:(r)=> r.ok && r.cols.includes('kategori') && r.cols.includes('jumlah') && r.rows.length===4
+  }
+};
+
+/* ---------- SQL CHAPTER 5: Menggabungkan Tabel (JOIN) ---------- */
+CHAPTER_CONTENT['sql_5'] = {
+  materi:`
+    <h2>Menggabungkan Tabel dengan JOIN</h2>
+    <p>Data sering tersebar di beberapa tabel. JOIN menyatukannya berdasarkan kolom penghubung.</p>
+
+    <div class="analogi">
+      <strong>🧩 Analogi:</strong> Tabel <code>transaksi</code> hanya menyimpan <em>id_produk</em> (angka), bukan nama produk. JOIN seperti <em>mencocokkan nomor punggung pemain dengan daftar nama</em> agar kita tahu siapa yang dimaksud.
+    </div>
+
+    <h3>INNER JOIN</h3>
+    <p>Menggabungkan baris yang cocok di kedua tabel:</p>
+    <pre>SELECT transaksi.id, produk.nama_produk, transaksi.jumlah
+FROM transaksi
+INNER JOIN produk ON transaksi.id_produk = produk.id;</pre>
+
+    <h3>Menggunakan Alias Tabel</h3>
+    <pre>SELECT t.id, p.nama_produk, pl.nama AS pembeli
+FROM transaksi t
+INNER JOIN produk p ON t.id_produk = p.id
+INNER JOIN pelanggan pl ON t.id_pelanggan = pl.id;</pre>
+
+    <h3>LEFT JOIN & RIGHT JOIN</h3>
+    <p><code>LEFT JOIN</code> menampilkan SEMUA baris tabel kiri, walau tak ada pasangan di kanan (diisi NULL). RIGHT JOIN kebalikannya.</p>
+    <pre>-- Semua pelanggan, walau belum pernah transaksi
+SELECT pl.nama, t.id AS id_transaksi
+FROM pelanggan pl
+LEFT JOIN transaksi t ON pl.id = t.id_pelanggan;</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li><code>ON</code> menentukan kolom penghubung antar tabel</li>
+        <li><code>INNER JOIN</code> = hanya yang cocok di keduanya</li>
+        <li><code>LEFT JOIN</code> = semua dari tabel kiri + yang cocok di kanan</li>
+        <li>Pakai alias tabel (mis. <code>produk p</code>) agar query lebih ringkas</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`-- Tampilkan transaksi dengan nama produk dan pembelinya\nSELECT t.id, pl.nama AS pembeli, p.nama_produk, t.jumlah\nFROM transaksi t\nINNER JOIN pelanggan pl ON t.id_pelanggan = pl.id\nINNER JOIN produk p ON t.id_produk = p.id\nLIMIT 10;`,
+  quiz:[
+    { q:"JOIN digunakan untuk?", opts:["Menghapus tabel","Menggabungkan data dari beberapa tabel","Mengurutkan data","Menghitung baris"], ans:1, exp:"JOIN menyatukan data antar tabel." },
+    { q:"Klausa apa yang menentukan kolom penghubung?", opts:["ON","WHERE","AS","BY"], ans:0, exp:"ON menentukan syarat pencocokan JOIN." },
+    { q:"INNER JOIN menampilkan?", opts:["Semua baris kiri","Semua baris kanan","Hanya baris yang cocok di keduanya","Semua baris keduanya"], ans:2, exp:"INNER JOIN hanya baris yang berpasangan." },
+    { q:"LEFT JOIN menjamin menampilkan semua baris dari?", opts:["Tabel kanan","Tabel kiri","Kedua tabel","Tidak ada"], ans:1, exp:"LEFT JOIN menjaga semua baris tabel kiri." },
+    { q:"Jika pelanggan belum pernah transaksi, LEFT JOIN ke transaksi memberi nilai?", opts:["0","NULL","Error","Baris hilang"], ans:1, exp:"Tidak ada pasangan diisi NULL." },
+  ],
+  challenge:{
+    title:"Siapa Beli Apa",
+    desc:"Buat laporan transaksi yang menampilkan <strong>nama pembeli</strong> (alias <strong>pembeli</strong>) dan <strong>nama_produk</strong> yang dibeli. Gabungkan tabel transaksi, pelanggan, dan produk.",
+    expected:"pembeli|nama_produk",
+    expectedDisplay:"50 baris berisi nama pembeli dan produk yang dibeli.",
+    starter:"SELECT pl.nama AS pembeli, p.nama_produk\nFROM transaksi t\nINNER JOIN pelanggan pl ON t.id_pelanggan = pl.id\nINNER JOIN produk p ON ___ = ___;",
+    hints:["Butuh dua JOIN: ke pelanggan dan ke produk.","Penghubung produk: t.id_produk = p.id.","...INNER JOIN produk p ON t.id_produk = p.id;"],
+    validate:(r)=> r.ok && r.cols.includes('pembeli') && r.cols.includes('nama_produk') && r.rows.length===50
+  }
+};
+
+/* ---------- SQL CHAPTER 6: Subquery & CTE ---------- */
+CHAPTER_CONTENT['sql_6'] = {
+  materi:`
+    <h2>Subquery & CTE</h2>
+    <p>Kadang sebuah query butuh hasil query lain. Inilah subquery (query bersarang) dan CTE.</p>
+
+    <div class="analogi">
+      <strong>🪆 Analogi:</strong> Subquery seperti <em>boneka matryoshka</em> — query di dalam query. CTE seperti <em>menyiapkan bahan dulu</em> (diberi nama), baru dimasak di query utama.
+    </div>
+
+    <h3>Subquery di WHERE</h3>
+    <pre>-- Produk yang harganya di atas rata-rata
+SELECT nama_produk, harga FROM produk
+WHERE harga > (SELECT AVG(harga) FROM produk);</pre>
+
+    <h3>Subquery dengan IN</h3>
+    <pre>-- Produk yang pernah dibeli
+SELECT nama_produk FROM produk
+WHERE id IN (SELECT id_produk FROM transaksi);</pre>
+
+    <h3>CTE dengan WITH AS</h3>
+    <p>CTE membuat tabel sementara bernama agar query lebih mudah dibaca:</p>
+    <pre>WITH produk_mahal AS (
+  SELECT * FROM produk WHERE harga > 20000
+)
+SELECT kategori, COUNT(*) AS jumlah
+FROM produk_mahal
+GROUP BY kategori;</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li>Subquery = query di dalam query, ditulis dalam tanda kurung</li>
+        <li>Bisa dipakai di WHERE (dengan <code>=</code>, <code>&gt;</code>, <code>IN</code>)</li>
+        <li><code>WITH nama AS (...)</code> membuat CTE — tabel sementara yang bisa dipakai di query utama</li>
+        <li>CTE membuat query kompleks lebih rapi dan mudah dibaca</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`-- Produk dengan harga di atas rata-rata\nSELECT nama_produk, harga FROM produk\nWHERE harga > (SELECT AVG(harga) FROM produk)\nORDER BY harga DESC;`,
+  quiz:[
+    { q:"Subquery adalah?", opts:["Tabel permanen","Query di dalam query lain","Jenis JOIN","Perintah hapus"], ans:1, exp:"Subquery adalah query bersarang." },
+    { q:"Subquery biasanya ditulis di dalam?", opts:["Tanda kurung ( )","Tanda kutip","Kurung siku","Tanda kurung kurawal"], ans:0, exp:"Subquery dibungkus tanda kurung." },
+    { q:"Kata kunci untuk membuat CTE?", opts:["WITH ... AS","JOIN","GROUP","HAVING"], ans:0, exp:"WITH nama AS (...) membuat CTE." },
+    { q:"WHERE harga > (SELECT AVG(harga) FROM produk) memilih produk yang?", opts:["Termurah","Di bawah rata-rata","Di atas rata-rata harga","Harga = rata-rata"], ans:2, exp:"Lebih besar dari rata-rata." },
+    { q:"Keunggulan utama CTE adalah?", opts:["Lebih cepat selalu","Membuat query kompleks lebih mudah dibaca","Menghapus data","Mengganti JOIN"], ans:1, exp:"CTE meningkatkan keterbacaan query." },
+  ],
+  challenge:{
+    title:"Produk di Atas Rata-rata",
+    desc:"Manajer ingin tahu produk <strong>premium</strong>, yaitu yang harganya <strong>lebih tinggi dari harga rata-rata semua produk</strong>. Tampilkan nama_produk dan harga, gunakan subquery untuk menghitung rata-rata.",
+    expected:"nama_produk|harga",
+    expectedDisplay:"Produk dengan harga > AVG(harga). Rata-rata ≈ 18.500.",
+    starter:"SELECT nama_produk, harga FROM produk\nWHERE harga > (SELECT ___ FROM produk);",
+    hints:["Hitung rata-rata dengan AVG(harga).","Subquery: (SELECT AVG(harga) FROM produk).","SELECT nama_produk, harga FROM produk WHERE harga > (SELECT AVG(harga) FROM produk);"],
+    validate:(r)=>{ if(!r.ok||!r.cols.includes('harga')) return false; const hi=r.cols.indexOf('harga'); return r.rows.length>0 && r.rows.every(row=>row[hi]>18000); }
+  }
+};
+
+/* ================================================================
+   PYTHON CHAPTERS
+   ================================================================ */
+
+/* ---------- PYTHON CHAPTER 1: Dasar Python ---------- */
+CHAPTER_CONTENT['python_1'] = {
+  materi:`
+    <h2>Dasar Python</h2>
+    <p>Python adalah bahasa pemrograman yang mudah dibaca, cocok untuk pemula dan analisis data.</p>
+
+    <div class="analogi">
+      <strong>📦 Analogi:</strong> Variabel seperti <em>kotak berlabel</em>. Kamu beri nama kotak (<code>nama</code>), lalu masukkan isinya (<code>"Andi"</code>).
+    </div>
+
+    <h3>Variabel & Tipe Data</h3>
+    <pre>nama = "Andi"        # teks (string)
+umur = 25            # bilangan bulat (integer)
+tinggi = 170.5       # bilangan desimal (float)
+aktif = True         # benar/salah (boolean)</pre>
+
+    <h3>Mencetak dengan print()</h3>
+    <pre>print("Halo dunia")
+print("Nama:", nama)
+print(f"Umur saya {umur} tahun")   # f-string</pre>
+
+    <h3>Operasi Dasar</h3>
+    <pre>a = 10
+b = 3
+print(a + b)   # 13
+print(a * b)   # 30
+print(a / b)   # 3.33...
+print(a % b)   # 1 (sisa bagi)</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li>Variabel = wadah data, dibuat dengan <code>nama = nilai</code></li>
+        <li>Tipe utama: string (teks), int, float, boolean</li>
+        <li><code>print()</code> menampilkan output</li>
+        <li><code>f"...{variabel}..."</code> menyisipkan variabel ke teks</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`# Buat variabel dan cetak\nnama = "Budi"\numur = 20\nprint(f"Halo, saya {nama} berumur {umur} tahun")\n\n# Coba operasi matematika\nprint(10 + 5)`,
+  quiz:[
+    { q:"Cara membuat variabel bernama x berisi 5?", opts:["x == 5","x = 5","var x = 5","let x = 5"], ans:1, exp:"Python pakai satu tanda = untuk assignment." },
+    { q:'"Andi" termasuk tipe data?', opts:["Integer","Float","String","Boolean"], ans:2, exp:"Teks dalam kutip = string." },
+    { q:"Fungsi untuk menampilkan output?", opts:["echo()","show()","print()","display()"], ans:2, exp:"print() menampilkan ke layar." },
+    { q:"Apa hasil 10 % 3?", opts:["3","1","0","3.33"], ans:1, exp:"% adalah sisa bagi (modulo); 10 dibagi 3 sisa 1." },
+    { q:'f"Umur {umur}" disebut?', opts:["Komentar","f-string (format string)","Fungsi","List"], ans:1, exp:"f-string menyisipkan variabel ke teks." },
+  ],
+  challenge:{
+    title:"Kartu Perkenalan",
+    desc:"Buat program perkenalan. Buat variabel <strong>nama</strong> berisi \"Sinta\" dan <strong>umur</strong> berisi 22, lalu cetak persis: <code>Nama: Sinta, Umur: 22</code>",
+    expected:"Nama: Sinta, Umur: 22",
+    expectedDisplay:"Nama: Sinta, Umur: 22",
+    starter:'nama = "Sinta"\numur = 22\nprint(___)',
+    hints:["Pakai f-string atau print dengan koma.","Format: f\"Nama: {nama}, Umur: {umur}\".","print(f\"Nama: {nama}, Umur: {umur}\")"],
+  }
+};
+
+/* ---------- PYTHON CHAPTER 2: Struktur Data ---------- */
+CHAPTER_CONTENT['python_2'] = {
+  materi:`
+    <h2>Struktur Data</h2>
+    <p>Python punya cara menyimpan banyak data sekaligus: list, dictionary, dan tuple.</p>
+
+    <div class="analogi">
+      <strong>📋 Analogi:</strong> <strong>List</strong> seperti daftar belanja berurutan. <strong>Dictionary</strong> seperti kamus: setiap kata (key) punya arti (value).
+    </div>
+
+    <h3>List — Daftar Berurutan</h3>
+    <pre>buah = ["apel", "jeruk", "mangga"]
+print(buah[0])        # apel (indeks mulai dari 0)
+print(buah[-1])       # mangga (dari belakang)
+buah.append("pisang") # menambah
+print(len(buah))      # 4 (jumlah elemen)</pre>
+
+    <h3>Dictionary — Pasangan Key:Value</h3>
+    <pre>siswa = {"nama": "Andi", "nilai": 90}
+print(siswa["nama"])   # Andi
+siswa["kelas"] = "10A" # menambah key baru
+print(siswa.keys())    # semua key</pre>
+
+    <h3>Tuple — List yang Tidak Bisa Diubah</h3>
+    <pre>koordinat = (10, 20)
+print(koordinat[0])  # 10
+# koordinat[0] = 5  -> ERROR, tuple bersifat tetap</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li>List <code>[ ]</code> = berurutan & bisa diubah, indeks mulai 0</li>
+        <li>Dictionary <code>{key: value}</code> = akses lewat key</li>
+        <li>Tuple <code>( )</code> = seperti list tapi tidak bisa diubah</li>
+        <li><code>len()</code> menghitung jumlah elemen, <code>.append()</code> menambah ke list</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`# List\nbuah = ["apel", "jeruk", "mangga"]\nprint("Buah pertama:", buah[0])\nprint("Jumlah:", len(buah))\n\n# Dictionary\nsiswa = {"nama": "Andi", "nilai": 90}\nprint("Nilai:", siswa["nilai"])`,
+  quiz:[
+    { q:"Indeks elemen pertama dalam list adalah?", opts:["1","0","-1","tergantung"], ans:1, exp:"Python mulai indeks dari 0." },
+    { q:"buah[-1] mengakses?", opts:["Elemen pertama","Elemen terakhir","Error","Semua elemen"], ans:1, exp:"Indeks negatif menghitung dari belakang." },
+    { q:"Cara menambah elemen ke list?", opts:[".add()",".append()",".push()",".insert() saja"], ans:1, exp:"List pakai .append()." },
+    { q:"Mengakses value 'nama' di dictionary siswa?", opts:["siswa.nama","siswa(nama)","siswa['nama']","siswa->nama"], ans:2, exp:"Dictionary diakses dengan key dalam kurung siku." },
+    { q:"Perbedaan utama tuple dengan list?", opts:["Tuple lebih besar","Tuple tidak bisa diubah","Tuple pakai kurung siku","Tidak ada beda"], ans:1, exp:"Tuple bersifat immutable (tetap)." },
+  ],
+  challenge:{
+    title:"Rata-rata Nilai",
+    desc:"Diberikan list <code>nilai = [80, 90, 70, 100]</code>. Hitung dan cetak <strong>rata-ratanya</strong>. Output harus: <code>85.0</code>",
+    expected:"85.0",
+    expectedDisplay:"85.0",
+    starter:"nilai = [80, 90, 70, 100]\nrata = ___ / ___\nprint(rata)",
+    hints:["Jumlahkan dengan sum(nilai).","Bagi dengan len(nilai).","print(sum(nilai) / len(nilai))"],
+  }
+};
+
+/* ---------- PYTHON CHAPTER 3: Kontrol Alur ---------- */
+CHAPTER_CONTENT['python_3'] = {
+  materi:`
+    <h2>Kontrol Alur</h2>
+    <p>Program perlu membuat keputusan dan mengulang. Inilah percabangan dan perulangan.</p>
+
+    <div class="analogi">
+      <strong>🚦 Analogi:</strong> <code>if</code> seperti lampu lalu lintas: "JIKA merah, berhenti". <code>for</code> seperti mengabsen murid satu per satu.
+    </div>
+
+    <h3>Percabangan if / elif / else</h3>
+    <pre>nilai = 75
+if nilai >= 80:
+    print("A")
+elif nilai >= 70:
+    print("B")
+else:
+    print("C")</pre>
+    <p>Perhatikan: setelah titik dua <code>:</code>, baris berikutnya menjorok (indentasi). Ini wajib di Python!</p>
+
+    <h3>Perulangan for</h3>
+    <pre>for i in range(1, 4):
+    print("Angka", i)
+# Output: Angka 1, Angka 2, Angka 3
+
+buah = ["apel", "jeruk"]
+for b in buah:
+    print(b)</pre>
+
+    <h3>Perulangan while</h3>
+    <pre>angka = 1
+while angka <= 3:
+    print(angka)
+    angka = angka + 1</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li><code>if/elif/else</code> untuk membuat keputusan</li>
+        <li>Indentasi (spasi di awal baris) WAJIB dan menandai blok kode</li>
+        <li><code>for x in range(a, b)</code> mengulang dari a sampai b-1</li>
+        <li><code>while</code> mengulang selama syarat masih benar</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`# Percabangan\nnilai = 85\nif nilai >= 80:\n    print("Lulus dengan nilai A")\nelse:\n    print("Coba lagi")\n\n# Perulangan\nfor i in range(1, 6):\n    print("Iterasi ke-", i)`,
+  quiz:[
+    { q:"Apa yang WAJIB ada setelah if/for/while?", opts:["Titik koma ;","Titik dua : dan indentasi","Kurung kurawal {}","Tidak ada"], ans:1, exp:"Python pakai : lalu blok menjorok." },
+    { q:"range(1, 4) menghasilkan angka?", opts:["1,2,3,4","1,2,3","0,1,2,3","1,4"], ans:1, exp:"range(a,b) berhenti di b-1." },
+    { q:"Untuk beberapa kondisi bertingkat pakai?", opts:["else if","elseif","elif","switch"], ans:2, exp:"Python pakai elif." },
+    { q:"while loop berjalan selama?", opts:["Selamanya","Syaratnya bernilai True","Sekali saja","Syarat False"], ans:1, exp:"while berjalan selama kondisi True." },
+    { q:"Kesalahan indentasi memunculkan?", opts:["TypeError","IndentationError","ValueError","Tidak error"], ans:1, exp:"Indentasi salah = IndentationError." },
+  ],
+  challenge:{
+    title:"Jumlah 1 sampai 10",
+    desc:"Gunakan perulangan untuk menjumlahkan angka <strong>1 sampai 10</strong>, lalu cetak totalnya. Output harus: <code>55</code>",
+    expected:"55",
+    expectedDisplay:"55",
+    starter:"total = 0\nfor i in range(1, ___):\n    total = total + i\nprint(total)",
+    hints:["range(1, 11) menghasilkan 1 sampai 10.","Tambahkan tiap i ke total.","for i in range(1, 11): total += i  → print(total) = 55"],
+  }
+};
+
+/* ---------- PYTHON CHAPTER 4: Fungsi & Modul ---------- */
+CHAPTER_CONTENT['python_4'] = {
+  materi:`
+    <h2>Fungsi & Modul</h2>
+    <p>Fungsi adalah blok kode yang bisa dipakai ulang. Modul adalah kumpulan fungsi siap pakai.</p>
+
+    <div class="analogi">
+      <strong>🍳 Analogi:</strong> Fungsi seperti <em>resep masakan</em>: kamu beri bahan (parameter), ikuti langkah, dan dapat hasil (return). Sekali tulis, bisa dipakai berkali-kali.
+    </div>
+
+    <h3>Membuat Fungsi dengan def</h3>
+    <pre>def sapa(nama):
+    return "Halo, " + nama
+
+print(sapa("Andi"))   # Halo, Andi
+print(sapa("Budi"))   # Halo, Budi</pre>
+
+    <h3>Parameter & Return</h3>
+    <pre>def luas_persegi(sisi):
+    return sisi * sisi
+
+hasil = luas_persegi(5)
+print(hasil)   # 25</pre>
+
+    <h3>Beberapa Parameter</h3>
+    <pre>def tambah(a, b):
+    return a + b
+
+print(tambah(3, 4))   # 7</pre>
+
+    <h3>Import Modul</h3>
+    <pre>import math
+print(math.sqrt(16))   # 4.0 (akar)
+print(math.pi)         # 3.14159...</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li><code>def nama(parameter):</code> membuat fungsi</li>
+        <li><code>return</code> mengembalikan hasil dari fungsi</li>
+        <li>Fungsi dipanggil dengan <code>nama(argumen)</code></li>
+        <li><code>import</code> memuat modul (mis. <code>math</code>) untuk fungsi tambahan</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`# Membuat fungsi\ndef luas_segitiga(alas, tinggi):\n    return 0.5 * alas * tinggi\n\nprint(luas_segitiga(10, 4))  # 20.0\n\nimport math\nprint(math.sqrt(25))  # 5.0`,
+  quiz:[
+    { q:"Kata kunci untuk membuat fungsi?", opts:["function","def","func","define"], ans:1, exp:"Python pakai def." },
+    { q:"Kata kunci untuk mengembalikan nilai dari fungsi?", opts:["return","give","output","print"], ans:0, exp:"return mengembalikan hasil." },
+    { q:"def tambah(a, b): a dan b disebut?", opts:["Variabel global","Parameter","Modul","Return"], ans:1, exp:"a, b adalah parameter fungsi." },
+    { q:"Cara memuat modul math?", opts:["load math","include math","import math","use math"], ans:2, exp:"import math memuat modul." },
+    { q:"Keuntungan utama fungsi?", opts:["Kode bisa dipakai ulang","Membuat lebih lambat","Wajib di Python","Menghapus variabel"], ans:0, exp:"Fungsi mendorong penggunaan ulang kode." },
+  ],
+  challenge:{
+    title:"Fungsi Diskon",
+    desc:"Buat fungsi <strong>hitung_diskon(harga, persen)</strong> yang mengembalikan harga setelah diskon. Lalu panggil dengan harga 100000 dan diskon 20 persen, cetak hasilnya. Output: <code>80000.0</code>",
+    expected:"80000.0",
+    expectedDisplay:"80000.0",
+    starter:"def hitung_diskon(harga, persen):\n    return harga - (harga * persen / 100)\n\nprint(hitung_diskon(___, ___))",
+    hints:["Rumus: harga - (harga * persen/100).","Panggil dengan (100000, 20).","print(hitung_diskon(100000, 20)) → 80000.0"],
+  }
+};
+
+/* ---------- PYTHON CHAPTER 5: Pandas Dasar ---------- */
+CHAPTER_CONTENT['python_5'] = {
+  materi:`
+    <h2>Pandas Dasar</h2>
+    <p>Pandas adalah pustaka Python untuk mengolah data tabel (seperti Excel, tapi dengan kode). Di sandbox, DataFrame <code>produk</code> dan <code>pelanggan</code> sudah tersedia.</p>
+
+    <div class="analogi">
+      <strong>📊 Analogi:</strong> DataFrame seperti <em>tabel Excel di dalam Python</em>. Punya baris dan kolom, dan kamu bisa menyaring, mengurutkan, dan menghitung dengan mudah.
+    </div>
+
+    <h3>Melihat Data</h3>
+    <pre>print(produk.head())      # 5 baris pertama
+print(produk.shape)       # (jumlah_baris, jumlah_kolom)
+print(produk.columns)     # nama-nama kolom
+print(produk.describe())  # ringkasan statistik</pre>
+
+    <h3>Memilih Kolom</h3>
+    <pre>print(produk["nama_produk"])          # satu kolom
+print(produk[["nama_produk","harga"]]) # beberapa kolom</pre>
+
+    <h3>Menyaring Baris (Filter)</h3>
+    <pre># Produk dengan harga di atas 20000
+mahal = produk[produk["harga"] > 20000]
+print(mahal)
+
+# Kategori Sembako
+sembako = produk[produk["kategori"] == "Sembako"]
+print(sembako)</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li>DataFrame = tabel data; <code>.head()</code>, <code>.shape</code>, <code>.describe()</code> untuk eksplorasi</li>
+        <li>Pilih kolom: <code>df["kolom"]</code> atau <code>df[["k1","k2"]]</code></li>
+        <li>Filter baris: <code>df[df["kolom"] > nilai]</code></li>
+        <li>Sudah tersedia DataFrame <code>produk</code> dan <code>pelanggan</code> di sandbox</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`# DataFrame 'produk' sudah tersedia\nprint(produk.head())\nprint("Jumlah baris & kolom:", produk.shape)\n\n# Filter produk mahal\nmahal = produk[produk["harga"] > 20000]\nprint(mahal[["nama_produk", "harga"]])`,
+  quiz:[
+    { q:"Pandas digunakan untuk?", opts:["Membuat web","Mengolah data tabel","Menggambar grafik 3D","Bermain game"], ans:1, exp:"Pandas untuk manipulasi data tabular." },
+    { q:"df.head() menampilkan?", opts:["Kolom saja","5 baris pertama","Baris terakhir","Jumlah baris"], ans:1, exp:".head() menampilkan 5 baris awal." },
+    { q:"Cara memilih kolom 'harga'?", opts:["df.harga()","df['harga']","df->harga","get(df,'harga')"], ans:1, exp:"df['kolom'] memilih kolom." },
+    { q:'df[df["harga"] > 20000] melakukan?', opts:["Mengurutkan","Menyaring baris harga > 20000","Menjumlahkan","Menghapus kolom"], ans:1, exp:"Itu operasi filter (boolean indexing)." },
+    { q:"df.shape menghasilkan?", opts:["(baris, kolom)","Nama kolom","Total nilai","Rata-rata"], ans:0, exp:"shape memberi tuple (jumlah_baris, jumlah_kolom)." },
+  ],
+  challenge:{
+    title:"Filter Produk Minuman",
+    desc:"Dari DataFrame <code>produk</code>, saring hanya kategori <strong>Minuman</strong>, lalu cetak jumlah barisnya menggunakan <code>len()</code>. Output: <code>3</code> (ada 3 produk Minuman di data sandbox).",
+    expected:"3",
+    expectedDisplay:"3",
+    starter:'minuman = produk[produk["kategori"] == "___"]\nprint(len(minuman))',
+    hints:["Filter: produk[produk['kategori'] == 'Minuman'].","Hitung baris dengan len().","print(len(produk[produk['kategori']=='Minuman'])) → 3"],
+  }
+};
+
+/* ---------- PYTHON CHAPTER 6: Analisis Data ---------- */
+CHAPTER_CONTENT['python_6'] = {
+  materi:`
+    <h2>Analisis Data</h2>
+    <p>Sekarang gabungkan semuanya untuk menganalisis data: mengelompokkan, menggabungkan, dan meringkas.</p>
+
+    <div class="analogi">
+      <strong>🔬 Analogi:</strong> Analisis data seperti seorang <em>detektif</em> yang mengumpulkan petunjuk (data) dan menyimpulkan pola: "kategori mana yang paling mahal?", "kota mana paling banyak pelanggan?".
+    </div>
+
+    <h3>groupby — Mengelompokkan</h3>
+    <pre># Rata-rata harga per kategori
+print(produk.groupby("kategori")["harga"].mean())
+
+# Jumlah produk per kategori
+print(produk.groupby("kategori").size())</pre>
+
+    <h3>Agregasi</h3>
+    <pre>print(produk["harga"].sum())    # total harga
+print(produk["harga"].max())    # termahal
+print(produk["stok"].mean())    # rata-rata stok</pre>
+
+    <h3>Mengurutkan</h3>
+    <pre># 5 produk termahal
+top5 = produk.sort_values("harga", ascending=False).head(5)
+print(top5[["nama_produk", "harga"]])</pre>
+
+    <h3>value_counts</h3>
+    <pre># Berapa pelanggan per kota
+print(pelanggan["kota"].value_counts())</pre>
+
+    <div class="poin-penting">
+      <div class="callout-title">📌 Poin Penting</div>
+      <ul>
+        <li><code>groupby("kolom")["x"].mean()</code> menghitung ringkasan per kelompok</li>
+        <li><code>.sum()</code>, <code>.mean()</code>, <code>.max()</code>, <code>.min()</code> untuk agregasi</li>
+        <li><code>sort_values("kolom", ascending=False)</code> mengurutkan</li>
+        <li><code>value_counts()</code> menghitung frekuensi tiap nilai</li>
+      </ul>
+    </div>
+  `,
+  sandboxStarter:`# Rata-rata harga per kategori\nprint(produk.groupby("kategori")["harga"].mean())\n\n# Produk termahal\ntop = produk.sort_values("harga", ascending=False).head(3)\nprint(top[["nama_produk", "harga"]])`,
+  quiz:[
+    { q:"Method untuk mengelompokkan data?", opts:["groupby()","cluster()","split()","divide()"], ans:0, exp:"groupby() mengelompokkan baris." },
+    { q:'produk.groupby("kategori")["harga"].mean() menghitung?', opts:["Total harga semua","Rata-rata harga per kategori","Jumlah baris","Harga termahal global"], ans:1, exp:"Rata-rata harga untuk tiap kategori." },
+    { q:"Untuk mengurutkan DataFrame pakai?", opts:["order_by()","sort_values()","arrange()","rank()"], ans:1, exp:"sort_values() mengurutkan." },
+    { q:"ascending=False berarti?", opts:["Menaik","Menurun (besar ke kecil)","Acak","Tidak diurutkan"], ans:1, exp:"ascending=False = urutan menurun." },
+    { q:"value_counts() berguna untuk?", opts:["Menghitung frekuensi tiap nilai","Menjumlahkan kolom","Menghapus duplikat","Menggambar grafik"], ans:0, exp:"value_counts menghitung kemunculan tiap nilai." },
+  ],
+  challenge:{
+    title:"Kategori Termahal",
+    desc:"Cari tahu <strong>kategori dengan rata-rata harga tertinggi</strong>. Gunakan groupby pada kolom kategori dan harga, lalu cetak nama kategorinya. Output: <code>Sembako</code>",
+    expected:"Sembako",
+    expectedDisplay:"Sembako",
+    starter:'rata = produk.groupby("kategori")["harga"].mean()\nprint(rata.idxmax())',
+    hints:["groupby('kategori')['harga'].mean() memberi rata per kategori.","idxmax() memberi index (kategori) dengan nilai terbesar.","print(produk.groupby('kategori')['harga'].mean().idxmax()) → Sembako"],
+  }
+};
+
+console.log('✓ Konten 12 chapter berhasil dimuat:', Object.keys(CHAPTER_CONTENT).length, 'chapter');
+</script>
+</body>
+</html>
