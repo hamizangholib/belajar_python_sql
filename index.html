@@ -448,6 +448,7 @@ a { color: var(--primary); text-decoration: none; }
       <div class="nav-section">Pembelajaran</div>
       <div class="nav-item" data-route="sql"><i data-lucide="database"></i> Track SQL</div>
       <div class="nav-item" data-route="python"><i data-lucide="code-2"></i> Track Python</div>
+      <div class="nav-item" data-route="exam"><i data-lucide="graduation-cap"></i> Ujian Akhir</div>
       <div class="nav-section">Akun</div>
       <div class="nav-item" data-route="profile"><i data-lucide="user"></i> Profil</div>
       <div class="nav-item" data-route="settings"><i data-lucide="settings"></i> Pengaturan</div>
@@ -538,7 +539,9 @@ const ALL_BADGES = [
   { id: "streak_3", emoji: "🔥", name: "3 Hari Beruntun", desc: "Streak 3 hari" },
   { id: "sql_master", emoji: "📊", name: "Kuasai SQL", desc: "Selesaikan semua chapter SQL" },
   { id: "pythonista", emoji: "🤖", name: "Pythonista", desc: "Selesaikan semua chapter Python" },
-  { id: "data_ruler", emoji: "🏅", name: "Penguasa Data", desc: "Selesaikan SEMUA chapter" }
+  { id: "data_ruler", emoji: "🏅", name: "Penguasa Data", desc: "Selesaikan SEMUA chapter" },
+  { id: "exam_sql", emoji: "🎓", name: "Sarjana SQL", desc: "Lulus Ujian Akhir SQL (skor ≥ 70)" },
+  { id: "exam_python", emoji: "🎖️", name: "Sarjana Python", desc: "Lulus Ujian Akhir Python (skor ≥ 70)" }
 ];
 
 const QUOTES = [
@@ -966,6 +969,8 @@ function checkBadges() {
   if ([1,2,3,4,5,6].every(n => chapterComplete('python', n))) earn('pythonista');
   if ([1,2,3,4,5,6].every(n => chapterComplete('sql', n)) &&
       [1,2,3,4,5,6].every(n => chapterComplete('python', n))) earn('data_ruler');
+  if (examPassed('sql')) earn('exam_sql');
+  if (examPassed('python')) earn('exam_python');
 }
 function chapterComplete(track, n) {
   const p = STATE.progress[`${track}_${n}`];
@@ -1030,6 +1035,8 @@ function route(name, params={}) {
     case 'python': renderTrack(content, 'python'); break;
     case 'profile': renderProfile(content); break;
     case 'settings': renderSettings(content); break;
+    case 'exam': renderExamHome(content); break;
+    case 'examrun': renderExamRun(content, params.track); break;
     case 'chapter': renderChapter(content, params.track, params.id); break;
   }
   setTimeout(() => lucide.createIcons(), 30);
@@ -1764,6 +1771,231 @@ function resetProgressFlow() {
       });
     }
   });
+}
+
+/* ================================================================
+   UJIAN AKHIR — soal lebih sulit (analisis & studi kasus)
+   ================================================================ */
+const EXAM_PASS = 70;       // skor minimal lulus
+const EXAM_TIME = 15 * 60;  // 15 menit (detik)
+
+const EXAMS = {
+  sql: [
+    { q:"Untuk mengambil produk <b>termahal ke-2</b> (bukan yang paling mahal), kombinasi paling tepat adalah?",
+      opts:["ORDER BY harga DESC LIMIT 2","ORDER BY harga DESC LIMIT 1 OFFSET 1","ORDER BY harga ASC LIMIT 2","WHERE harga = MAX(harga) - 1"], ans:1,
+      exp:"LIMIT 1 OFFSET 1 melewati baris pertama (termahal) dan mengambil 1 baris berikutnya." },
+    { q:"Query: <code>SELECT kategori, COUNT(*) c FROM produk GROUP BY kategori HAVING c > 4;</code> akan menampilkan?",
+      opts:["Semua kategori","Hanya kategori dengan lebih dari 4 produk","4 kategori teratas","Produk ke-4 tiap kategori"], ans:1,
+      exp:"HAVING menyaring hasil grup; hanya grup dengan COUNT > 4 yang lolos." },
+    { q:"Kamu ingin menampilkan <b>semua pelanggan termasuk yang belum pernah bertransaksi</b>. JOIN yang tepat dari pelanggan ke transaksi?",
+      opts:["INNER JOIN","LEFT JOIN","RIGHT JOIN dari transaksi","CROSS JOIN"], ans:1,
+      exp:"LEFT JOIN menjaga semua baris tabel kiri (pelanggan), yang tak punya transaksi diisi NULL." },
+    { q:"Apa hasil <code>COUNT(DISTINCT kota)</code> pada tabel pelanggan?",
+      opts:["Jumlah seluruh pelanggan","Jumlah kota yang berbeda (unik)","Kota terbanyak","Selalu 1"], ans:1,
+      exp:"DISTINCT menghitung nilai unik saja, jadi banyaknya kota berbeda." },
+    { q:"Pada <code>WHERE kategori='Minuman' OR kategori='Makanan' AND harga>10000</code>, karena AND lebih tinggi dari OR, query ini berarti?",
+      opts:["(Minuman atau Makanan) dan harga>10000","Minuman, ATAU (Makanan dan harga>10000)","Semua harga>10000","Error sintaks"], ans:1,
+      exp:"AND dievaluasi lebih dulu, jadi: Minuman OR (Makanan AND harga>10000). Gunakan tanda kurung untuk mengubahnya." },
+    { q:"Fungsi agregat seperti <code>AVG(harga)</code> terhadap baris yang nilainya NULL akan?",
+      opts:["Menghitung NULL sebagai 0","Mengabaikan baris NULL","Menghasilkan NULL total","Error"], ans:1,
+      exp:"Fungsi agregat (kecuali COUNT(*)) mengabaikan NULL." },
+    { q:"<code>SELECT * FROM produk ORDER BY kategori ASC, harga DESC;</code> mengurutkan?",
+      opts:["Hanya kategori","Kategori A-Z, lalu di tiap kategori harga termahal dulu","Harga dulu baru kategori","Acak"], ans:1,
+      exp:"ORDER BY berlapis: kategori menaik, lalu harga menurun dalam tiap kategori." },
+    { q:"CTE: <code>WITH t AS (SELECT id_produk, SUM(jumlah) s FROM transaksi GROUP BY id_produk) SELECT * FROM t WHERE s>10;</code> menghasilkan?",
+      opts:["Semua produk","Produk dengan total jumlah terjual lebih dari 10","10 produk pertama","Produk dengan harga>10"], ans:1,
+      exp:"CTE menghitung total jumlah terjual per produk, lalu disaring yang >10." },
+    { q:"<code>SELECT nama_produk FROM produk WHERE id NOT IN (SELECT id_produk FROM transaksi);</code> mencari?",
+      opts:["Produk terlaris","Produk yang belum pernah terjual","Semua produk","Produk termahal"], ans:1,
+      exp:"NOT IN subquery: produk yang id-nya tidak muncul di transaksi = belum pernah terjual." },
+    { q:"Pola <code>LIKE 'S%'</code> mencocokkan nama yang?",
+      opts:["Mengandung huruf S","Diawali huruf S","Diakhiri huruf S","Persis 'S'"], ans:1,
+      exp:"% di belakang berarti karakter bebas sesudahnya, jadi 'diawali S'." },
+    { q:"Tanpa GROUP BY, <code>SELECT MAX(harga), nama_produk FROM produk;</code> di banyak database dianggap?",
+      opts:["Selalu benar & menampilkan produk termahal","Berisiko/ambigu karena nama_produk tak teragregasi","Menampilkan semua baris","Error pasti di semua DB"], ans:1,
+      exp:"Mencampur agregat dengan kolom non-agregat tanpa GROUP BY menghasilkan nilai tak menentu / tidak valid di banyak DB." },
+    { q:"Cara paling tepat menghitung <b>total nilai penjualan</b> (harga × jumlah) seluruh transaksi?",
+      opts:["SUM(harga) FROM produk","SUM(jumlah) FROM transaksi","SUM(p.harga*t.jumlah) dari transaksi JOIN produk","AVG(harga)*COUNT(*)"], ans:2,
+      exp:"Perlu JOIN transaksi ke produk untuk mengalikan harga dengan jumlah, lalu SUM." },
+  ],
+  python: [
+    { q:"Hasil dari <code>[1,2,3,4,5][1:4]</code> adalah?",
+      opts:["[1,2,3]","[2,3,4]","[2,3,4,5]","[1,2,3,4]"], ans:1,
+      exp:"Slicing [1:4] mengambil indeks 1,2,3 (4 eksklusif) → [2,3,4]." },
+    { q:"<code>d={'a':1}; print(d.get('b', 0))</code> menghasilkan?",
+      opts:["KeyError","None","0","'b'"], ans:2,
+      exp:".get(key, default) mengembalikan default (0) jika key tak ada, tanpa error." },
+    { q:"Output <code>print([x*x for x in range(4)])</code>?",
+      opts:["[1,4,9,16]","[0,1,4,9]","[0,1,2,3]","[1,2,3,4]"], ans:1,
+      exp:"range(4)=0,1,2,3 → kuadratnya 0,1,4,9." },
+    { q:"<code>angka=[1,2,3]; b=angka; b.append(4); print(len(angka))</code> menghasilkan?",
+      opts:["3","4","Error","2"], ans:1,
+      exp:"b dan angka menunjuk list yang SAMA (referensi), jadi append memengaruhi keduanya → len 4." },
+    { q:"Tipe hasil <code>produk.groupby('kategori')['harga'].mean()</code> adalah?",
+      opts:["DataFrame","Series (indeks kategori)","List","dict"], ans:1,
+      exp:"Agregasi satu kolom setelah groupby menghasilkan Series berindeks kategori." },
+    { q:"<code>x=7; print(f'{x:03d}')</code> mencetak?",
+      opts:["7","007","x03","003"], ans:1,
+      exp:"Format :03d mengisi nol di depan hingga 3 digit → 007." },
+    { q:"<code>list(range(2, 11, 3))</code> menghasilkan?",
+      opts:["[2,5,8]","[2,5,8,11]","[2,4,6,8,10]","[3,6,9]"], ans:0,
+      exp:"range(start=2, stop=11, step=3) → 2,5,8 (11 eksklusif)." },
+    { q:"Filter pandas dua syarat yang BENAR secara sintaks?",
+      opts:["df[df.harga>1 and df.stok>1]","df[(df.harga>1) & (df.stok>1)]","df[df.harga>1 && df.stok>1]","df.filter(harga>1, stok>1)"], ans:1,
+      exp:"Pandas memakai & dengan tiap kondisi dalam tanda kurung; 'and' tidak bekerja pada Series." },
+    { q:"Sebuah fungsi tanpa pernyataan <code>return</code> akan mengembalikan?",
+      opts:["0","'' (string kosong)","None","Error"], ans:2,
+      exp:"Fungsi tanpa return mengembalikan None secara implisit." },
+    { q:"Output <code>for i,v in enumerate(['a','b']): print(i,v)</code> baris pertama?",
+      opts:["0 a","1 a","a 0","a b"], ans:0,
+      exp:"enumerate memberi pasangan (indeks, nilai) mulai 0 → '0 a'." },
+    { q:"<code>print(2 > 1 or 1/0)</code> menghasilkan?",
+      opts:["Error pembagian nol","True","False","1"], ans:1,
+      exp:"Short-circuit: karena 2>1 True, bagian setelah 'or' tidak dievaluasi → tak ada error, hasil True." },
+    { q:"Untuk mengambil <b>3 produk termurah</b> dari DataFrame produk, kode yang tepat?",
+      opts:["produk.sort_values('harga').head(3)","produk.sort_values('harga', ascending=False).head(3)","produk.head(3)","produk.min(3)"], ans:0,
+      exp:"sort_values('harga') default menaik (termurah dulu), lalu head(3)." },
+  ]
+};
+
+let examState = null;
+let examTimer = null;
+
+function examPassed(track) {
+  return STATE.progress[`exam_${track}`]?.passed;
+}
+function examBestScore(track) {
+  return STATE.progress[`exam_${track}`]?.bestScore || 0;
+}
+
+function renderExamHome(c) {
+  setPage('Ujian Akhir', 'Uji pemahamanmu dengan soal tingkat lanjut');
+  const sqlReady = [1,2,3,4,5,6].every(n => chapterComplete('sql', n));
+  const pyReady = [1,2,3,4,5,6].every(n => chapterComplete('python', n));
+
+  const cardFor = (track, label, emoji, ready) => {
+    const best = examBestScore(track);
+    const passed = examPassed(track);
+    return `
+      <div class="card" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:30px;">${emoji}</div>
+        <h3 style="margin:0;">${label}</h3>
+        <div style="color:var(--muted); font-size:13px;">${EXAMS[track].length} soal • ${EXAM_TIME/60} menit • lulus jika skor ≥ ${EXAM_PASS}</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          ${passed ? `<span class="pill pill-success"><i data-lucide="check" style="width:12px;height:12px;"></i> LULUS</span>` : ''}
+          ${best ? `<span class="pill pill-warning">Skor terbaik: ${best}</span>` : `<span class="pill pill-muted">Belum dikerjakan</span>`}
+        </div>
+        ${ready
+          ? `<button class="btn btn-primary" style="margin-top:6px;" onclick="route('examrun', {track:'${track}'})"><i data-lucide="play"></i> Mulai Ujian</button>`
+          : `<button class="btn" disabled style="margin-top:6px;"><i data-lucide="lock"></i> Selesaikan semua chapter ${track.toUpperCase()} dulu</button>`}
+      </div>`;
+  };
+
+  c.innerHTML = `
+    <div class="callout" style="margin-bottom:20px;">
+      <div class="callout-title">📋 Tentang Ujian Akhir</div>
+      Berbeda dari kuis chapter, soal ujian bersifat <b>analitis & studi kasus</b> yang menggabungkan banyak konsep. Ada batas waktu ${EXAM_TIME/60} menit. Lulus (skor ≥ ${EXAM_PASS}) memberi <b>+100 XP</b> dan badge kelulusan. Boleh diulang.
+    </div>
+    <div class="grid-2">
+      ${cardFor('sql', 'Ujian SQL', '📊', sqlReady)}
+      ${cardFor('python', 'Ujian Python', '🐍', pyReady)}
+    </div>
+  `;
+}
+
+function renderExamRun(c, track) {
+  const questions = EXAMS[track];
+  examState = { track, questions, answers: Array(questions.length).fill(null), submitted:false, timeLeft: EXAM_TIME };
+  setPage(`Ujian ${track.toUpperCase()}`, `${questions.length} soal • Jawab semua sebelum waktu habis`);
+
+  c.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <button class="btn btn-ghost btn-sm" onclick="quitExam()"><i data-lucide="arrow-left"></i> Keluar</button>
+      <div class="pill pill-warning" id="examTimer" style="font-size:14px;"><i data-lucide="clock" style="width:14px;height:14px;"></i> 15:00</div>
+    </div>
+    <div id="examList"></div>
+    <button class="btn btn-primary" id="submitExam" style="margin-top:12px;"><i data-lucide="check-circle"></i> Kumpulkan Jawaban</button>
+    <div id="examResult" style="margin-top:16px;"></div>
+  `;
+  renderExamList();
+  document.getElementById('submitExam').onclick = submitExam;
+
+  clearInterval(examTimer);
+  examTimer = setInterval(() => {
+    examState.timeLeft--;
+    const m = String(Math.floor(examState.timeLeft/60)).padStart(2,'0');
+    const s = String(examState.timeLeft%60).padStart(2,'0');
+    const el = document.getElementById('examTimer');
+    if (!el) { clearInterval(examTimer); return; }
+    el.innerHTML = `<i data-lucide="clock" style="width:14px;height:14px;"></i> ${m}:${s}`;
+    if (examState.timeLeft <= 60) el.className = 'pill';
+    if (examState.timeLeft <= 0) { clearInterval(examTimer); toast('Waktu habis! Jawaban dikumpulkan otomatis.', 'error'); submitExam(); }
+    lucide.createIcons();
+  }, 1000);
+  setTimeout(()=>lucide.createIcons(),30);
+}
+
+function renderExamList() {
+  const list = document.getElementById('examList');
+  list.innerHTML = examState.questions.map((q, qi) => `
+    <div class="card quiz-question">
+      <div class="quiz-q-text">${qi+1}. ${q.q}</div>
+      ${q.opts.map((opt, oi) => `
+        <div class="quiz-option ${examState.answers[qi]===oi?'selected':''} ${examState.submitted ? (oi===q.ans?'correct':(examState.answers[qi]===oi?'wrong':'')) : ''}"
+             onclick="${examState.submitted?'':`pickExam(${qi},${oi})`}">${opt}</div>
+      `).join('')}
+      ${examState.submitted ? `<div class="quiz-feedback ${examState.answers[qi]===q.ans?'correct':'wrong'}">${examState.answers[qi]===q.ans?'✓ Benar.':'✗ Kurang tepat.'} ${q.exp}</div>` : ''}
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+function pickExam(qi, oi) { examState.answers[qi] = oi; renderExamList(); }
+
+function quitExam() {
+  clearInterval(examTimer);
+  showModal({ title:'Keluar dari ujian?', text:'Jawabanmu tidak akan disimpan.', confirmText:'Keluar', confirmStyle:'btn-danger', onConfirm:()=>route('exam') });
+}
+
+function submitExam() {
+  if (examState.submitted) return;
+  if (examState.timeLeft > 0 && examState.answers.some(a => a === null)) {
+    toast('Masih ada soal yang belum dijawab!', 'error'); return;
+  }
+  clearInterval(examTimer);
+  examState.submitted = true;
+  const { track } = examState;
+  const correct = examState.questions.filter((q,i)=> examState.answers[i]===q.ans).length;
+  const score = Math.round((correct/examState.questions.length)*100);
+  const passed = score >= EXAM_PASS;
+
+  const key = `exam_${track}`;
+  const prevBest = examBestScore(track);
+  STATE.progress[key] = {
+    bestScore: Math.max(prevBest, score),
+    passed: passed || examPassed(track),
+    attempts: (STATE.progress[key]?.attempts || 0) + 1,
+    lastScore: score
+  };
+
+  renderExamList();
+  const res = document.getElementById('examResult');
+  res.innerHTML = `<div class="card" style="text-align:center;">
+    <div style="font-size:34px;">${passed ? '🎉' : '😟'}</div>
+    <div style="font-size:28px; font-weight:600;">Skor: ${score}/100</div>
+    <div style="color:var(--muted); margin-top:6px;">${correct} dari ${examState.questions.length} benar</div>
+    <div style="margin-top:10px; color:${passed?'var(--success)':'var(--error)'};">${passed ? '✓ Selamat, kamu LULUS!' : `Belum lulus (butuh ≥ ${EXAM_PASS}). Pelajari pembahasan di tiap soal, lalu coba lagi.`}</div>
+    <div style="margin-top:14px; display:flex; gap:8px; justify-content:center;">
+      <button class="btn" onclick="route('examrun', {track:'${track}'})"><i data-lucide="rotate-ccw"></i> Ulangi</button>
+      <button class="btn btn-primary" onclick="route('exam')">Selesai</button>
+    </div>
+  </div>`;
+
+  if (passed && score > prevBest) addXP(100, `Lulus Ujian ${track.toUpperCase()}`);
+  else if (score > prevBest) addXP(20, `Skor baru Ujian ${track.toUpperCase()}`);
+  checkBadges();
+  saveUserData();
+  document.getElementById('submitExam').classList.add('hidden');
+  window.scrollTo({ top: document.getElementById('examResult').offsetTop, behavior:'smooth' });
 }
 
 /* ================================================================
